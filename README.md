@@ -14,4 +14,8 @@ I work on my projects alone and for the time being, i won't have any people comm
 > Some projects might need to change the directory for function.
 3. After openning check the **project manual** or descrition directly in the project.
 4. Enjoy
-> Feel free to edit anything in the code to make it better or work differentely.
+
+> [!IMPORTANT]
+> To have all files look normal and good, download and put **style.css** in the same folders as other HTML codes.
+
+> Feel free to edit anything in any code to make it better or work differentely.
