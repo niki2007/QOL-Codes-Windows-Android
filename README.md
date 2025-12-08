@@ -1,5 +1,6 @@
 # Projects
 I will be posting all of my Projects i made just for fun or for making something easier here. Feel free to download, use and edit them.
+All projects will have description on what they do and how they work.
 > [!WARNING]
 > ! Projects were tested on Windows 10 and some on Android devices. Not all of them will work on other devices without change of the code. !
 
