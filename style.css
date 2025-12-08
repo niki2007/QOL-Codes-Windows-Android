@@ -1,0 +1,243 @@
+/* Main */
+body {
+    margin: 0;
+    font-family: 'Pixelify Sans';
+    background: radial-gradient(circle at 50% 30%, #111 0%, #000 100%);
+    color: #f33; 
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    height: 100vh;
+    padding: 10px;
+    position: relative;
+}
+
+/* Headings */
+h1 {
+    font-family: 'Pixelify Sans';
+    font-size: 36px;
+    color: #f33;
+    text-shadow: 0 0 1px #f33, 0 0 112px #f33, 0 0 18px #f33;
+    margin-bottom: 1px;
+}
+
+/* Labels */
+label {
+    font-size: 18px;
+    margin-top: 1px;
+    font-family: 'Pixelify Sans';
+}
+
+/* Sliders */
+input[type=range] {
+    width: 420px;
+    height: 12px;
+    -webkit-appearance: none;
+    background: #111;
+    border-radius: 6px;
+    margin: 1px 0;
+    outline: none;
+    box-shadow: 0 0 6px #f33 inset, 0 0 12px #f33;
+    transition: 0.3s;
+    font-family: 'Pixelify Sans';
+}
+
+    input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        background: #f33;
+        border-radius: 50%;
+        cursor: crosshair;
+        box-shadow: 0 0 12px #f33, 0 0 24px #f33 inset;
+        animation: pulseThumb 2s ease-in-out infinite;
+        transition: 0.2s;
+    }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            box-shadow: 0 0 16px #f33, 0 0 32px #f33 inset;
+        }
+
+/* Pulse */
+@keyframes pulseThumb {
+    0%, 100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* Buttons */
+button {
+    padding: 10px 20px;
+    margin: 3px;
+    border: 1px solid #f33;
+    border-radius: 12px;
+    background: linear-gradient(45deg, #111, #000);
+    color: #f33;
+    cursor: crosshair;
+    font-family: 'Pixelify Sans';
+    font-size: 18px;
+    text-shadow: 0 0 6px #f33, 0 0 12px #f33;
+    box-shadow: 0 0 12px #f33, 0 0 24px #f33 inset;
+    transition: 0.3s;
+    animation: pulseButton 5s ease-in-out infinite;
+}
+/* Hover */
+    button:hover {
+        box-shadow: 0 0 18px #f33, 0 0 36px #f33 inset;
+        transform: scale(1.05);
+    }
+
+/* Pulse */
+@keyframes pulseButton {
+    0%,100% {
+        box-shadow: 0 0 11px #f33, 0 0 12px #f33 inset;
+    }
+
+    50% {
+        box-shadow: 0 0 18px #f33, 0 0 20px #f33 inset;
+    }
+}
+
+/* Number Inputs */
+input[type=number] {
+    width: 80px;
+    margin: 0px;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #f33;
+    background: #111;
+    color: #f33;
+    box-shadow: 0 0 6px #f33 inset;
+    font-family: 'Pixelify Sans';
+}
+
+/* Focus */
+input:focus, button:focus {
+    outline: none;
+    box-shadow: 0 0 20px #f33, 0 0 40px #f33 inset;
+}
+
+
+
+/* Background subtle glow shift */
+@keyframes ambientGlow {
+    0% {
+        filter: hue-rotate(0deg);
+    }
+
+    50% {
+        filter: hue-rotate(10deg);
+    }
+
+    100% {
+        filter: hue-rotate(0deg);
+    }
+}
+
+body {
+    animation: ambientGlow 15s ease-in-out infinite;
+}
+/* Dropdowns */
+select {
+    width: 160px;
+    padding: 8px 12px;
+    background: #111;
+    color: #f33;
+    border: 1px solid #f33;
+    border-radius: 8px;
+    font-family: 'Pixelify Sans';
+    font-size: 16px;
+    box-shadow: 0 0 6px #f33 inset, 0 0 12px #f33;
+    text-shadow: 0 0 6px #f33;
+    cursor: crosshair;
+    outline: none;
+    appearance: none;
+}
+    select:hover {
+        box-shadow: 0 0 12px #f33 inset, 0 0 18px #f33;
+    }
+
+    select:focus {
+        box-shadow: 0 0 16px #f33 inset, 0 0 32px #f33;
+    }
+
+    select option {
+        background: #000;
+        color: #f33;
+        font-family: 'Pixelify Sans';
+    }
+
+/* Color input wrapper */
+.color-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+/* Input */
+input[type="color"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 40px;
+    height: 40px;
+    border: 2px solid #f33;
+    border-radius: 8px;
+    background: #111;
+    cursor: crosshair;
+    box-shadow: 0 0 12px #f33, 0 0 20px #f33 inset;
+    transition: 0.3s;
+}
+
+    /* Hover and Focus */
+    input[type="color"]:hover,
+    input[type="color"]:focus {
+        box-shadow: 0 0 20px #f33, 0 0 30px #f33 inset;
+        transform: scale(1.1);
+        outline: none;
+    }
+
+/* Display selected color */
+#colorDisplay {
+    width: 60px;
+    height: 40px;
+    border-radius: 8px;
+    border: 2px solid #f33;
+    box-shadow: 0 0 12px #f33, 0 0 20px #f33 inset;
+    background-color: #f33; 
+    transition: 0.3s;
+}
+/* Text Inputs and Textareas */
+input[type="text"],
+textarea {
+    width: 600px; 
+    padding: 10px 12px;
+    font-size: 18px; 
+    font-family: 'Pixelify Sans';
+    color: #f33; 
+    background-color: #111; 
+    border: 2px solid #f33; 
+    border-radius: 8px;
+    box-shadow: 0 0 6px #f33 inset, 0 0 12px #f33; 
+    outline: none;
+    transition: 0.3s;
+}
+
+    /* Hover  */
+    input[type="text"]:hover,
+    textarea:hover {
+        box-shadow: 0 0 12px #f33 inset, 0 0 18px #f33;
+    }
+
+    /* Focus */
+    input[type="text"]:focus,
+    textarea:focus {
+        box-shadow: 0 0 20px #f33 inset, 0 0 30px #f33;
+    }
