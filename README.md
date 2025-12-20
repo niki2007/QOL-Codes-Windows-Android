@@ -9,7 +9,7 @@ I work on my projects alone and for the time being, i won't have any people comm
 
 ## Instalation
 1. Download a project that you want.
-2. For **.HTML** projects use any browser to open it, and for any **.PY***(python)* project use **Python Idle** to open it. 🐍
+2. For **.HTML** projects use any browser to open it, and for any **.PY** *(python)* project use **Python Idle** to open it. 🐍
 > [!NOTE]
 > - Some Python codes might need some libraries to be installed. For that check the **project manual** how to install them.
 > - Some projects might need to change the directory for function. ⤵️
@@ -20,3 +20,5 @@ I work on my projects alone and for the time being, i won't have any people comm
 > - To have all HTML files look normal and good, download and put **style.css** in the same folders as other HTML codes.
 
 > Feel free to edit anything in any code to make it better or work differentely. 🐟
+
+# ❤️
