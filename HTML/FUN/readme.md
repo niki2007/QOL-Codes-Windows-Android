@@ -1,4 +1,7 @@
 # Description for each code
+
+
+
 <details>
   <summary><b>Background Generator</b></summary>
 Generates random backgrounds (images) based on inputs. Has a button to save it as PNG and then you can set it as your desktop background or just use it for something else.
@@ -12,6 +15,22 @@ Generates random backgrounds (images) based on inputs. Has a button to save it a
   <img src="https://cdn.discordapp.com/attachments/1163867500623179798/1451941784794959902/background-1765481869050.png?ex=694801a9&is=6946b029&hm=d3e45bcb35adca5a851d9640181d3749921a848df9047c1edf3c9e52af8c0ebf&" width="33%" />
 </p>
 </details>
+
+
+
+<details>
+  <summary><b>Fast Drawing Maker</b></summary>
+Generates a basic canvas that you can just save as blank image with defined height and width in PX. You can also draw something very simple on the canvas with basic brush.
+<p align="center">
+<img src="https://media.discordapp.net/attachments/1163867500623179798/1451953859902832824/image.png?ex=69480ce8&is=6946bb68&hm=d884410e28e42f5e4a9f7f7e04b678f4806e242e7faa6932f7030d03d8803623&=&format=webp&quality=lossless&width=791&height=559" width="80%" />
+</p>
+<p align="center">
+<img src="https://media.discordapp.net/attachments/1163867500623179798/1451952171166990499/drawing_3.png?ex=69480b55&is=6946b9d5&hm=e63e0c33cc6483463fde8521916e925b570abaad5372fe578851ec6e762b6a5c&=&format=webp&quality=lossless&width=268&height=268" width="40%" />
+<img src="https://media.discordapp.net/attachments/1163867500623179798/1451952604094660648/drawing_4.png?ex=69480bbc&is=6946ba3c&hm=ca6aae71c613329087874e701835f077cfbe749e98ae6b34aaef528c09a2133c&=&format=webp&quality=lossless&width=268&height=268" width="40%" />
+</p>
+</details>
+
+
 
 
 
