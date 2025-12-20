@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h2>Custom Drawing Canvas</h2>
+
+  <label>
+    Canvas Width (px):
+    <input type="number" id="canvasWidth" value="512" min="1">
+  </label>
+
+  <label>
+    Canvas Height (px):
+    <input type="number" id="canvasHeight" value="512" min="1">
+  </label>
+
+  <label>
+    Background Color:
+    <input type="color" id="bgColor" value="#ffffff">
+  </label>
+
+  <label>
+    Brush Color:
+    <input type="color" id="brushColor" value="#000000">
+  </label>
+
+  <label>
+    Brush Size:
+    <input type="number" id="brushSize" value="5" min="1">
+  </label>
+
+  <label>
+    File Type:
+    <select id="fileType">
+      <option value="png">PNG</option>
+      <option value="jpeg">JPEG</option>
+      <option value="jpg">JPG</option>
+      <option value="gif">GIF</option>
+    </select>
+  </label>
+
+  <button onclick="setupCanvas()">Create/Reset Canvas</button>
+  <button onclick="downloadImage()">Download Drawing</button>
+
+  <br>
+  <canvas id="drawingCanvas"></canvas>
+
+  <script>
+    let canvas = document.getElementById("drawingCanvas");
+    let ctx = canvas.getContext("2d");
+    let painting = false;
+
+    function setupCanvas() {
+      const width = parseInt(document.getElementById("canvasWidth").value);
+      const height = parseInt(document.getElementById("canvasHeight").value);
+      const bgColor = document.getElementById("bgColor").value;
+
+      canvas.width = width;
+      canvas.height = height;
+
+      // Fill background
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.lineCap = "round";
+    }
+
+    canvas.addEventListener("mousedown", (e) => {
+      painting = true;
+      draw(e);
+    });
+
+    canvas.addEventListener("mouseup", () => {
+      painting = false;
+      ctx.beginPath();
+    });
+
+    canvas.addEventListener("mousemove", draw);
+
+    function draw(e) {
+      if (!painting) return;
+
+      const brushColor = document.getElementById("brushColor").value;
+      const brushSize = parseInt(document.getElementById("brushSize").value);
+
+      ctx.strokeStyle = brushColor;
+      ctx.lineWidth = brushSize;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    }
+
+    function downloadImage() {
+      let fileType = document.getElementById("fileType").value;
+      let actualType = fileType.toLowerCase();
+
+      if (actualType === "gif") {
+        alert("GIF export not supported in browser — using PNG instead.");
+        actualType = "png";
+      }
+
+      const dataURL = canvas.toDataURL("image/" + actualType);
+      const link = document.createElement("a");
+      link.download = "drawing." + actualType;
+      link.href = dataURL;
+      link.click();
+    }
+
+    // Set up canvas on first load
+    window.onload = setupCanvas;
+  </script>
+
+    
+  <details class="edit-box">
+      <summary>DESC</summary>
+      <div class="edit-content">
+Choose all the attributes
+Click on Create/Reset Canvas
+If you want to, draw something on the canvas
+Choose the type of file you want to save it as
+Click on Download Drawing
+      </div>
+  </details>
+  <details class="edit-box blue-box">
+      <summary>NOTE</summary>
+      <div class="edit-content">
+Format GIF doesn't work in all browsers.
+      </div>
+  </details>
+
+
+
+
+</body>
+</html>
