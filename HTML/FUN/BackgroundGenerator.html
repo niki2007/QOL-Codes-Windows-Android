@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Procedural Background Generator with Seed & Palettes</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
+            background: #222;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: sans-serif;
+            color: white;
+        }
+
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: crosshair;
+        }
+
+        #controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 12px;
+            border-radius: 8px;
+            z-index: 10;
+            width: 240px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        input, select, button {
+            margin-bottom: 12px;
+            width: 100%;
+            padding: 6px;
+            border-radius: 4px;
+            border: none;
+            font-size: 14px;
+        }
+
+        button {
+            background: #530000;
+            color: white;
+            cursor: pointer;
+        }
+
+            button:hover {
+                background: #ff0000;
+            }
+    </style>
+</head>
+<body>
+
+<div id="controls">
+  <label>
+    Seed (Leave blank for random):
+    <input type="text" id="seedInput" placeholder="example: 98494654984" />
+  </label>
+  <label>
+    Noise Type (Stats of circles):
+    <select id="noiseType">
+      <option>random</option>
+      <option>blend</option>
+      <option>clouds</option>
+      <option>distorted</option>
+      <option>magic</option>
+      <option>marble</option>
+      <option>musgrave</option>
+      <option>noise</option>
+      <option>stucci</option>
+      <option>voronoi</option>
+      <option>wood</option>
+    </select>
+  </label>
+  <label>
+    Number of Shapes:
+    <input type="number" id="shapeCount" min="1" step="1" value="500" />
+  </label>
+  <label>
+    Max Shape Size:
+    <input type="number" id="maxSize" min="1" max="300" value="80" />
+  </label>
+  <label>
+    Circles color palette:
+      <select id="colorPalette">
+          <option value="cool">Cool Blues</option>
+          <option value="warm">Warm Sunset</option>
+          <option value="forest">Forest Greens</option>
+          <option value="pastel">Bloody Dark</option>
+          <option value="mono">Monochrome</option>
+          <option value="sunset">Sunset</option>
+          <option value="ocean">Ocean</option>
+          <option value="neon">Neon</option>
+          <option value="cyberpunk">Cyberpunk</option>
+          <option value="earthy">Earthy</option>
+          <option value="candy">Candy</option>
+          <option value="vintage">Vintage</option>
+          <option value="storm">Storm</option>
+          <option value="lava">Lava</option>
+          <option value="frost">Frost</option>
+      </select>
+  </label>
+  <label>
+    Background Color:
+    <input type="color" id="bgColor" value="#111111" />
+  </label>
+  <button id="generateBtn">Generate</button>
+  <button id="downloadBtn">Download PNG</button>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+  function cyrb128(str) {
+    let h1 = 1779033703, h2 = 3144134277, h3 = 1013904242, h4 = 2773480762;
+    for (let i = 0, k; i < str.length; i++) {
+      k = str.charCodeAt(i);
+      h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+      h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+      h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+      h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+    }
+    h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+    h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+    h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
+    h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+    return [(h1 ^ h2 ^ h3 ^ h4) >>> 0, h2 >>> 0, h3 >>> 0, h4 >>> 0];
+  }
+
+  function mulberry32(a) {
+    return function() {
+      var t = a += 0x6D2B79F5;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    }
+  }
+
+  function lerpColor(c1, c2, t) {
+    return [
+      Math.round(c1[0] + (c2[0] - c1[0]) * t),
+      Math.round(c1[1] + (c2[1] - c1[1]) * t),
+      Math.round(c1[2] + (c2[2] - c1[2]) * t),
+    ];
+  }
+
+  const palettes = {
+    cool: [[50,100,150], [100,150,200], [150,200,240], [80,120,160], [60,90,140]],
+    warm: [[230,100,70], [240,150,80], [250,200,100], [210,70,50], [255,180,120]],
+    forest: [[30,70,40], [50,90,60], [70,130,80], [20,60,30], [90,150,100]],
+    pastel: [[50,0,0], [100,0,0], [150,0,0], [200,0,0], [25,0,0]],
+    mono: [[50,50,50], [100,100,100], [150,150,150], [200,200,200], [25,25,25]],
+    sunset: [[255,94,77], [255,140,66], [255,185,97], [255,110,97], [200,70,60]],
+    ocean: [[0,105,148], [0,168,232], [3,72,112], [28,169,201], [72,202,228]],
+    neon: [[57,255,20], [255,20,147], [0,255,255], [255,255,0], [0,255,127]],
+    cyberpunk: [[255,0,102], [0,255,255], [255,255,255], [40,0,80], [0,200,180]],
+    earthy: [[130,90,44], [160,120,70], [100,70,40], [180,140,100], [70,50,30]],
+    candy: [[255,105,180], [255,182,193], [255,160,122], [255,218,185], [255,240,245]],
+    vintage: [[102,72,45], [153,122,85], [204,182,155], [120,100,80], [170,150,130]],
+    storm: [[40,40,60], [70,70,100], [100,100,140], [30,30,45], [120,120,160]],
+    lava: [[255,80,0], [200,30,0], [255,120,20], [150,0,0], [255,160,40]],
+    frost: [[180,220,255], [140,190,255], [200,230,255], [120,160,200], [100,140,180]],
+  };
+
+  function drawShapes(ctx, options) {
+    const { width, height, shapeCount, maxSize, minColor, maxColor, noiseType, rng, bgColor } = options;
+
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, width, height);
+
+    const offsetX = rng() * 10;
+    const offsetY = rng() * 10;
+    const waveDirX = rng() * 2 - 1;
+    const waveDirY = rng() * 2 - 1;
+    const jitterAmount = rng() * 0.5;
+
+    function randomNoise(x, y) { return rng(); }
+    function blendNoise(x, y) { return (randomNoise(x + offsetX, y + offsetY) + randomNoise((x + offsetX) * 1.5, (y + offsetY) * 1.5)) / 2; }
+    function cloudsNoise(x, y) { return 0.5 + 0.5 * Math.sin((x + offsetX) * 10 * waveDirX) * Math.cos((y + offsetY) * 10 * waveDirY); }
+    function distortedNoise(x, y) { return Math.abs(Math.sin((x + offsetX) * (y + offsetY) * 5 + jitterAmount)); }
+    function magicNoise(x, y) { return Math.abs(Math.sin((x + offsetX) * 3 + (y + offsetY) * 7 + jitterAmount) + Math.cos((x + offsetX) * 5 - (y + offsetY) * 2)); }
+    function marbleNoise(x, y) { return 0.5 + 0.5 * Math.sin((x + offsetX) * 10 + Math.sin((y + offsetY) * 10 + jitterAmount)); }
+    function musgraveNoise(x, y) { return Math.abs(Math.sin((x + offsetX) * (y + offsetY) * 15) * Math.cos(x + y + jitterAmount)); }
+    function noiseNoise(x, y) { return Math.abs(Math.sin((x + offsetX) * 7 + jitterAmount) + Math.cos((y + offsetY) * 7)); }
+    function stucciNoise(x, y) { return Math.abs(Math.sin((x + offsetX) * 12) - Math.cos((y + offsetY) * 12 + jitterAmount)); }
+    function voronoiNoise(x, y) {
+      const localX = ((x + offsetX) * 10) % 1 + (rng() - 0.5) * jitterAmount;
+      const localY = ((y + offsetY) * 10) % 1 + (rng() - 0.5) * jitterAmount;
+      return Math.min(Math.sqrt((localX - 0.5) ** 2 + (localY - 0.5) ** 2), 1);
+    }
+    function woodNoise(x, y) {
+      const dist = Math.sqrt((x + offsetX) ** 2 + (y + offsetY) ** 2);
+      return 0.5 + 0.5 * Math.sin(dist * 20 + jitterAmount);
+    }
+
+    const noiseFunctions = { random: randomNoise, blend: blendNoise, clouds: cloudsNoise, distorted: distortedNoise, magic: magicNoise, marble: marbleNoise, musgrave: musgraveNoise, noise: noiseNoise, stucci: stucciNoise, voronoi: voronoiNoise, wood: woodNoise };
+    const noiseFn = noiseFunctions[noiseType.toLowerCase()] || randomNoise;
+
+    for (let i = 0; i < shapeCount; i++) {
+      const xNorm = rng();
+      const yNorm = rng();
+      const noiseVal = noiseFn(xNorm, yNorm);
+      const size = maxSize * (0.3 + 0.7 * noiseVal);
+      const t = (noiseVal + Math.abs(Math.sin(i * 2))) / 2;
+      const colorRGB = lerpColor(minColor, maxColor, t);
+      const color = `rgb(${colorRGB[0]},${colorRGB[1]},${colorRGB[2]})`;
+
+      const x = xNorm * width;
+      const y = yNorm * height;
+      ctx.beginPath();
+      ctx.fillStyle = color;
+      ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener("resize", () => {
+    resize();
+    drawCurrent();
+  });
+  resize();
+
+  const seedInput = document.getElementById("seedInput");
+  const noiseTypeSelect = document.getElementById("noiseType");
+  const shapeCountInput = document.getElementById("shapeCount");
+  const maxSizeInput = document.getElementById("maxSize");
+  const colorPaletteSelect = document.getElementById("colorPalette");
+  const bgColorInput = document.getElementById("bgColor");
+  const generateBtn = document.getElementById("generateBtn");
+  const downloadBtn = document.getElementById("downloadBtn");
+
+  let currentOptions = {};
+
+  function drawCurrent() {
+    const seedStr = seedInput.value.trim() || Math.random().toString();
+    const seed = cyrb128(seedStr)[0];
+    const rng = mulberry32(seed);
+    const noiseType = noiseTypeSelect.value;
+    const shapeCount = parseInt(shapeCountInput.value) || 50;
+    const maxSize = parseInt(maxSizeInput.value) || 100;
+    const palette = palettes[colorPaletteSelect.value] || palettes.cool;
+    const bgColor = bgColorInput.value;
+    const minColor = palette[Math.floor(rng() * palette.length)];
+    const maxColor = palette[Math.floor(rng() * palette.length)];
+
+    currentOptions = {
+      width: canvas.width,
+      height: canvas.height,
+      shapeCount,
+      maxSize,
+      minColor,
+      maxColor,
+      noiseType,
+      rng,
+      bgColor
+    };
+    drawShapes(ctx, currentOptions);
+  }
+
+  generateBtn.addEventListener("click", drawCurrent);
+  window.addEventListener("load", drawCurrent);
+
+  downloadBtn.addEventListener("click", () => {
+    const link = document.createElement("a");
+    link.download = `background-${Date.now()}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  });
+</script>
+
+
+
+</body>
+</html>
