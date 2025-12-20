@@ -247,7 +247,7 @@ textarea {
     position: fixed;
     top: 8px;
     /* DESCRIPTION BOX Positioned between left and center */
-    right: 80%;
+    left: 20%;
     z-index: 9999;
     width: 120px;
     min-width: 120px;
@@ -263,7 +263,8 @@ textarea {
     .edit-box[open] {
         width: auto;
         min-width: 520px;
-        background: rgba(0, 0, 0, 0.8);
+        background: rgba(0, 0, 0, 0.85);
+        left: 25%;
     }
 
     /* DESCRIPTION BOX Header (small box) */
@@ -293,7 +294,7 @@ textarea {
 /* DESCRIPTION BOX----Additional Box---- */
 .blue-box {
     background: rgba(0,0,255,0.05);
-    left: 80%;
+    top: 40px;
 }
 
     .blue-box .edit-content {
