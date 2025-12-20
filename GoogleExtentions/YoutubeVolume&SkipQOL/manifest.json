@@ -1,0 +1,17 @@
+{
+    "manifest_version": 3,
+    "name": "Custom YouTube Volume bar & Skip buttons",
+    "version": "1.0",
+    "description": "Adds custom YouTube volume control to top left corner, makes volume more precise and adds next and previous video buttons under it. (Light, Precise, Simple, QOL, Adjustable)",
+    "icons": {
+        "512": "icon512.png"
+    },
+    "content_scripts": [
+        {
+            "matches": [ "*://www.youtube.com/*" ],
+            "js": [ "content.js" ],
+            "run_at": "document_idle"
+        }
+    ],
+    "permissions": [ "storage" ]
+}

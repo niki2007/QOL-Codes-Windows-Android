@@ -1,0 +1,136 @@
+// GLOBALS
+let currentVideo = null;
+let volumeSlider = null;
+
+function getSavedVolume() {
+    const saved = parseFloat(localStorage.getItem('customVolume'));
+    return isNaN(saved) ? 0.5 : saved;
+}
+
+function applySavedVolume(video) {
+    const saved = getSavedVolume();
+    if (video.volume !== saved) {
+        video.volume = saved;
+        console.log(`[Volume Sync] Applied volume: ${saved}`);
+    }
+    if (volumeSlider) volumeSlider.value = saved;
+}
+
+function createVolumeSlider(video) {
+    if (document.getElementById('custom-volume-container')) return;
+
+    const container = document.createElement('div');
+    container.id = 'custom-volume-container';
+
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = '0';
+    slider.max = '1';
+    slider.step = '0.0005';
+    slider.id = 'custom-volume-slider';
+
+    volumeSlider = slider;
+
+    // Initial value
+    slider.value = getSavedVolume();
+    applySavedVolume(video);
+
+    // Styling
+    Object.assign(container.style, {
+        position: 'fixed',
+        top: '48px',
+        left: '20px',
+        zIndex: '9999',
+        padding: '4px',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        borderRadius: '8px',
+        transition: 'width 0.6s ease, transform 0.6s ease',
+        width: '40px',
+        overflow: 'hidden',
+        backdropFilter: 'blur(5px)',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+        transform: 'scale(0.95)',
+        opacity: '0.6'
+    });
+
+    Object.assign(slider.style, {
+        width: '1000px',
+        height: '40px',
+        opacity: '0',
+        transition: 'opacity 0.8s ease'
+    });
+
+    container.addEventListener('mouseenter', () => {
+        container.style.width = '1000px';
+        container.style.transform = 'scale(1)';
+        slider.style.opacity = '1';
+    });
+
+    container.addEventListener('mouseleave', () => {
+        container.style.width = '40px';
+        container.style.transform = 'scale(0.95)';
+        slider.style.opacity = '0';
+    });
+
+    slider.addEventListener('input', () => {
+        const vol = parseFloat(slider.value);
+        if (!isNaN(vol)) {
+            localStorage.setItem('customVolume', vol);
+            if (currentVideo) currentVideo.volume = vol;
+        }
+    });
+
+    container.appendChild(slider);
+    document.body.appendChild(container);
+}
+
+function setupVideoSync(video) {
+    currentVideo = video;
+    createVolumeSlider(video);
+    applySavedVolume(video);
+
+    // Apply volume when video is ready
+    video.addEventListener('loadeddata', () => {
+        applySavedVolume(video);
+    });
+
+    // Watchdog: every 5 seconds force reapply
+    setInterval(() => {
+        if (!currentVideo) return;
+        const saved = getSavedVolume();
+        if (Math.abs(currentVideo.volume - saved) > 0.001) {
+            console.log(`[Watchdog] Volume drift detected. Fixing...`);
+            applySavedVolume(currentVideo);
+        }
+    }, 1000);
+}
+
+// Handle internal page navigation (YouTube SPAs)
+function observeVideoChanges() {
+    let lastVideo = null;
+
+    const observer = new MutationObserver(() => {
+        const video = document.querySelector('video');
+        if (video && video !== lastVideo) {
+            lastVideo = video;
+            setupVideoSync(video);
+        }
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+    });
+}
+
+// Start everything
+(function () {
+    const tryInit = setInterval(() => {
+        const video = document.querySelector('video');
+        if (video) {
+            clearInterval(tryInit);
+            setupVideoSync(video);
+            observeVideoChanges();
+        }
+    }, 300);
+})();
