@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Simple Music Player</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    button {
+      margin: 0.3em;
+      padding: 0.4em 1em;
+      font-size: 1em;
+      cursor: pointer;
+    }
+
+    #playlist {
+      margin-top: 1em;
+      border: 1px solid #ccc;
+      padding: 1em;
+      background: #fafafa;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+
+    .track {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.3em 0;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .track span {
+      user-select: none;
+    }
+
+    #controls {
+      margin-top: 1em;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Simple Music Player</h2>
+
+  <input type="file" id="fileInput" accept="audio/*" multiple><br><br>
+
+  <audio id="audioPlayer" controls></audio>
+
+  <div id="controls">
+    <button id="prevBtn">Previous</button>
+    <button id="nextBtn">Next</button>
+    <button id="randomBtn">Random</button>
+  </div>
+
+  <div id="playlist">No tracks loaded.</div>
+
+  <script>
+    (() => {
+      const fileInput = document.getElementById('fileInput');
+      const audioPlayer = document.getElementById('audioPlayer');
+      const playlistDiv = document.getElementById('playlist');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const randomBtn = document.getElementById('randomBtn');
+
+      audioPlayer.volume = 0.05;
+
+      let tracks = [];
+      let currentIndex = -1;
+
+      function getAudioDuration(url) {
+        return new Promise(resolve => {
+          const a = new Audio();
+          a.src = url;
+          a.addEventListener('loadedmetadata', () => resolve(a.duration));
+          a.addEventListener('error', () => resolve(0));
+        });
+      }
+
+      function renderPlaylist() {
+        if (tracks.length === 0) {
+          playlistDiv.textContent = 'No tracks loaded.';
+          return;
+        }
+
+        playlistDiv.innerHTML = '';
+        tracks.forEach((track, idx) => {
+          const trackDiv = document.createElement('div');
+          trackDiv.className = 'track';
+
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = `${track.name} (${Math.round(track.duration)}s)`;
+          if (idx === currentIndex) {
+            nameSpan.style.fontWeight = 'bold';
+            nameSpan.style.color = 'blue';
+          }
+
+          const playBtn = document.createElement('button');
+          playBtn.textContent = 'Play';
+          playBtn.onclick = () => playTrack(idx);
+
+          trackDiv.appendChild(nameSpan);
+          trackDiv.appendChild(playBtn);
+          playlistDiv.appendChild(trackDiv);
+        });
+      }
+
+      function playTrack(index) {
+        if (index < 0 || index >= tracks.length) return;
+        currentIndex = index;
+        audioPlayer.src = tracks[index].url;
+        audioPlayer.play();
+        renderPlaylist();
+      }
+
+      prevBtn.onclick = () => {
+        if (tracks.length === 0) return;
+        let newIndex = currentIndex - 1;
+        if (newIndex < 0) newIndex = tracks.length - 1;
+        playTrack(newIndex);
+      };
+
+      nextBtn.onclick = () => {
+        if (tracks.length === 0) return;
+        let newIndex = currentIndex + 1;
+        if (newIndex >= tracks.length) newIndex = 0;
+        playTrack(newIndex);
+      };
+
+      randomBtn.onclick = () => {
+        if (tracks.length === 0) return;
+        let randIndex;
+        do {
+          randIndex = Math.floor(Math.random() * tracks.length);
+        } while (randIndex === currentIndex && tracks.length > 1);
+        playTrack(randIndex);
+      };
+
+      fileInput.addEventListener('change', async () => {
+        const files = Array.from(fileInput.files);
+        for (const file of files) {
+          const url = URL.createObjectURL(file);
+          const duration = await getAudioDuration(url);
+          if (duration > 20) {
+            tracks.push({ url, name: file.name, duration });
+          } else {
+            URL.revokeObjectURL(url);
+          }
+        }
+        if (currentIndex === -1 && tracks.length > 0) currentIndex = 0;
+        renderPlaylist();
+        fileInput.value = '';
+      });
+
+      // Auto-play next track on end
+      audioPlayer.addEventListener('ended', () => {
+        nextBtn.onclick();
+      });
+    })();
+  </script>
+
+
+
+
+  <details class="edit-box">
+      <summary>DESC</summary>
+      <div class="edit-content">
+Click on Choose files
+Select all the songs you want to see in the playlist
+Hit play at any song to play it
+      </div>
+  </details>
+  <details class="edit-box blue-box">
+      <summary>NOTE</summary>
+      <div class="edit-content">
+Volume is always set to a very low value, can be adjusted or changed in code.
+      </div>
+  </details>
+
+
+
+
+
+</body>
+</html>
