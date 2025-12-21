@@ -1,4 +1,4 @@
-# Instalation
+# Instalation all extentions
 ### Here is a detailed description how to download extentions and use them step by step
 > For Windows 10
 1. Find the extention you want to download and open a file
