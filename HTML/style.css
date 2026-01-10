@@ -217,7 +217,7 @@ input[type="color"] {
 /* Text Inputs and Textareas */
 input[type="text"],
 textarea {
-    width: 600px; 
+    width: 200px; 
     padding: 10px 12px;
     font-size: 18px; 
     font-family: 'Pixelify Sans';
@@ -303,3 +303,4 @@ textarea {
     .blue-box summary {
         color: blue; 
     }
+
