@@ -1,0 +1,9 @@
+/* Mute button */
+.ytp-mute-button {
+    display: none !important;
+}
+
+/* Volume slider */
+.ytp-volume-panel {
+    display: none !important;
+}

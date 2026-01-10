@@ -1,0 +1,13 @@
+{
+    "manifest_version": 3,
+    "name": "Hide YouTube Volume Controls",
+    "version": "1.0",
+    "description": "Hides the volume slider and mute button on YouTube.",
+    "permissions": [ "activeTab", "scripting" ],
+    "content_scripts": [
+        {
+            "matches": [ "*://www.youtube.com/*" ],
+            "css": [ "hide.css" ]
+        }
+    ]
+}
