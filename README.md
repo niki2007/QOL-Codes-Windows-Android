@@ -21,4 +21,6 @@ I work on my projects alone and for the time being, i won't have any people comm
 
 > Feel free to edit anything in any code to make it better or work differentely. 🐟
 
+> Everything is described in English 🦅🗽
+
 # ❤️
