@@ -26,6 +26,11 @@
             height: 100vh;
             cursor: crosshair;
         }
+        input#seedInput {
+            display: block;
+            cursor: crosshair;
+            width: 210px;
+        }
 
         #controls {
             position: fixed;
@@ -38,10 +43,7 @@
             width: 240px;
         }
 
-        label {
-            display: block;
-            margin-bottom: 6px;
-        }
+
 
         input, select, button {
             margin-bottom: 12px;
@@ -61,6 +63,7 @@
             button:hover {
                 background: #ff0000;
             }
+
     </style>
 </head>
 <body>
@@ -68,7 +71,7 @@
 <div id="controls">
   <label>
     Seed (Leave blank for random):
-    <input type="text" id="seedInput" placeholder="example: 98494654984" />
+    <input type="text" id="seedInput" placeholder="e.g. myseed123" />
   </label>
   <label>
     Noise Type (Stats of circles):
