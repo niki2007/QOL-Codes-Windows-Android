@@ -11,10 +11,12 @@ body {
 }
 
 #emojiDisplay {
-  margin-top: 10px; /* leave space for slider */
-  font-size: 20px; /* default emoji size */
+  margin-top: 10px;
+  font-size: 20px;
   line-height: 1.5;
   word-wrap: break-word;
+  height: calc(100vh - 80px);
+  overflow-y: scroll;
 }
 </style>
 </head>
@@ -31,7 +33,6 @@ body {
 </div>
 
 <script>
-// Get elements
 const slider = document.getElementById('sizeSlider');
 const emojiDisplay = document.getElementById('emojiDisplay');
 const sizeValue = document.getElementById('sizeValue');
