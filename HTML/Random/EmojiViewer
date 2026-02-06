@@ -1,27 +1,17 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Emoji Viewer with Size Slider</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="style.css">
 <style>
 body {
   font-family: Arial, sans-serif;
   margin: 20px;
-}
-
-#sliderContainer {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  background: rgba(255,255,255,0.9);
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.2);
-  z-index: 100;
+  color: white
 }
 
 #emojiDisplay {
-  margin-top: 80px; /* leave space for slider */
+  margin-top: 10px; /* leave space for slider */
   font-size: 20px; /* default emoji size */
   line-height: 1.5;
   word-wrap: break-word;
