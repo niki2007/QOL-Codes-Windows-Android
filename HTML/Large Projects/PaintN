@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsidian-Like Canvas</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
+            background-color: #1e1e1e;
+            font-family: sans-serif;
+        }
+
+        #brushBtn,
+        #eraserBtn,
+        #clearBtn,
+        #toolbar input[type=color],
+        #brushPresets .brushPreset {
+            background: rgb(0, 0, 0, 0.20);
+            color: #fff;
+            border: 1px solid #555;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        #toolbar {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgb(125, 125, 125, 0.30);
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+            #toolbar input[type=color] {
+                width: 32px;
+                height: 32px;
+                padding: 0;
+                border: none;
+                cursor: pointer;
+            }
+
+        #canvas {
+            display: block;
+        }
+
+        #brushPresets {
+            display: flex;
+            gap: 5px;
+        }
+
+            #brushPresets .brushPreset {
+                width: 32px;
+                height: 32px;
+                border: 1px solid #555;
+                cursor: pointer;
+                padding: 0;
+                outline: none;
+            }
+
+        #colorPresets {
+            display: flex;
+            gap: 6px;
+        }
+
+            #colorPresets .preset {
+                width: 24px;
+                height: 24px;
+                border: 2px solid #555;
+                cursor: pointer;
+                padding: 0;
+                outline: dashed;
+                outline-color: rgb(100, 100, 100, 0.30);
+            }
+
+    </style>
+</head>
+<body>
+    <div id="toolbar">
+        <button id="brushBtn">Brush</button>
+        <button id="eraserBtn">Eraser</button>
+        <input type="color" id="colorPicker" value="#ffffff">
+        <input type="range" id="brushSize" min="1" max="100" value="13">
+
+        <!-- Brush size presets -->
+        <div id="brushPresets">
+            <button class="brushPreset" data-size="2">2</button>
+            <button class="brushPreset" data-size="13">13</button>
+            <button class="brushPreset" data-size="25">25</button>
+            <button class="brushPreset" data-size="50">50</button>
+        </div>
+
+        <!-- Preset colors -->
+        <div id="colorPresets">
+            <button class="preset" style="background:#ffffff"></button>
+            <button class="preset" style="background:#ff0000"></button>
+            <button class="preset" style="background:#00ff00"></button>
+            <button class="preset" style="background:#0000ff"></button>
+            <button class="preset" style="background:#ffff00"></button>
+            <button class="preset" style="background:#ff00ff"></button>
+            <button class="preset" style="background:#00ffff"></button>
+            <button class="preset" style="background:#000000"></button>
+        </div>
+
+        <!-- Clear canvas button -->
+        <button id="clearBtn">Clear Canvas</button>
+
+    </div>
+    <canvas id="canvas"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const undoStack = [];
+        const redoStack = [];
+        const maxHistory = 30; // memory
+
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        let scale = 0.5;
+        let offsetX = 0;
+        let offsetY = 0;
+        let isPanning = false;
+        let startPan = { x: 0, y: 0 };
+        let isDrawing = false;
+        let lastPos = { x: 0, y: 0 };
+        let tool = 'brush';
+        let color = '#ffffff';
+        let brushSize = 13;
+        const gridSize = 50;
+
+        // Store multiple small offscreen canvases for 'infinite' drawing
+        const chunks = new Map();
+        const chunkSize = 2000;
+
+        function getChunkKey(x, y) {
+            const cx = Math.floor(x / chunkSize);
+            const cy = Math.floor(y / chunkSize);
+            return `${cx},${cy}`;
+        }
+
+        function getOrCreateChunk(x, y) {
+            const key = getChunkKey(x, y);
+            if (!chunks.has(key)) {
+                const c = document.createElement('canvas');
+                c.width = chunkSize;
+                c.height = chunkSize;
+                const cCtx = c.getContext('2d');
+                cCtx.imageSmoothingEnabled = false; 
+                cCtx.lineCap = 'round';
+                cCtx.lineJoin = 'round';
+                chunks.set(key, { canvas: c, ctx: cCtx, cx: Math.floor(x / chunkSize), cy: Math.floor(y / chunkSize) });
+            }
+            return chunks.get(key);
+        }
+
+        function drawLine(x1, y1, x2, y2) {
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const dist = Math.hypot(dx, dy);
+            const steps = Math.ceil(dist / 5); 
+
+            for (let i = 0; i < steps; i++) {
+                const sx = x1 + (dx * i) / steps;
+                const sy = y1 + (dy * i) / steps;
+                const nx = x1 + (dx * (i + 1)) / steps;
+                const ny = y1 + (dy * (i + 1)) / steps;
+
+                const chunk1 = getOrCreateChunk(sx, sy);
+                const chunk2 = getOrCreateChunk(nx, ny);
+                const chunksToDraw = new Set([chunk1, chunk2]);
+
+                chunksToDraw.forEach(chunk => chunk.used = true); 
+
+                chunksToDraw.forEach(chunk => {
+                    const localX1 = sx - chunk.cx * chunkSize;
+                    const localY1 = sy - chunk.cy * chunkSize;
+                    const localX2 = nx - chunk.cx * chunkSize;
+                    const localY2 = ny - chunk.cy * chunkSize;
+
+                    chunk.ctx.save();
+                    chunk.ctx.beginPath();
+                    chunk.ctx.moveTo(localX1, localY1);
+                    chunk.ctx.lineTo(localX2, localY2);
+                    chunk.ctx.lineWidth = brushSize;
+                    chunk.ctx.strokeStyle = tool === 'brush' ? color : 'rgba(0,0,0,1)';
+                    chunk.ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
+                    chunk.ctx.stroke();
+                    chunk.ctx.restore();
+                });
+            }
+        }
+
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Fine grid
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            const fineStep = 100 * scale; 
+            for (let x = 0; x < width; x += fineStep) {
+                ctx.beginPath();
+                ctx.moveTo(x + (offsetX % fineStep), 0);
+                ctx.lineTo(x + (offsetX % fineStep), height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < height; y += fineStep) {
+                ctx.beginPath();
+                ctx.moveTo(0, y + (offsetY % fineStep));
+                ctx.lineTo(width, y + (offsetY % fineStep));
+                ctx.stroke();
+            }
+
+            // Big grid
+            ctx.strokeStyle = '#383838'; 
+            ctx.lineWidth = 2;
+            const bigStep = 1000 * scale;
+            for (let x = 0; x < width; x += bigStep) {
+                ctx.beginPath();
+                ctx.moveTo(x + (offsetX % bigStep), 0);
+                ctx.lineTo(x + (offsetX % bigStep), height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < height; y += bigStep) {
+                ctx.beginPath();
+                ctx.moveTo(0, y + (offsetY % bigStep));
+                ctx.lineTo(width, y + (offsetY % bigStep));
+                ctx.stroke();
+            }
+
+            ctx.restore();
+            chunks.forEach(chunk => {
+                if (chunk.used) {
+                    ctx.save();
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                    ctx.lineWidth = 2;
+                    const screenX = offsetX + chunk.cx * chunkSize * scale;
+                    const screenY = offsetY + chunk.cy * chunkSize * scale;
+                    const size = chunkSize * scale;
+                    ctx.strokeRect(screenX, screenY, size, size);
+                    ctx.restore();
+                }
+            });
+
+            // Draw all chunks
+            chunks.forEach(chunk => {
+                // calculate chunk position on screen
+                const screenX = offsetX + chunk.cx * chunkSize * scale;
+                const screenY = offsetY + chunk.cy * chunkSize * scale;
+                const size = chunkSize * scale;
+
+                // skip chunk if it's off-screen
+                if (screenX + size < 0 || screenX > width || screenY + size < 0 || screenY > height) return;
+
+                ctx.save();
+                ctx.setTransform(scale, 0, 0, scale, screenX, screenY);
+                ctx.drawImage(chunk.canvas, 0, 0);
+                ctx.restore();
+            });
+
+        }
+
+        function screenToWorld(x, y) {
+            return { x: (x - offsetX) / scale, y: (y - offsetY) / scale };
+        }
+
+        // Mousedown: start drawing or panning
+        canvas.addEventListener('mousedown', e => {
+            if (e.button === 1) { // middle mouse for panning
+                isPanning = true;
+                startPan = { x: e.clientX - offsetX, y: e.clientY - offsetY };
+            } else if (e.button === 0) { // left mouse for drawing
+                isDrawing = true;
+                const pos = screenToWorld(e.clientX, e.clientY);
+                lastPos = { x: pos.x, y: pos.y };
+
+                // Save snapshot for undo BEFORE starting stroke
+                const snapshot = new Map();
+                chunks.forEach((chunk, key) => {
+                    snapshot.set(key, chunk.ctx.getImageData(0, 0, chunk.canvas.width, chunk.canvas.height));
+                });
+                undoStack.push(snapshot);
+                if (undoStack.length > maxHistory) undoStack.shift();
+
+                // Clear redo stack because new stroke invalidates redo
+                redoStack.length = 0;
+            }
+        });
+
+        // Mouseup: stop drawing or panning
+        canvas.addEventListener('mouseup', e => {
+            if (e.button === 1) {
+                isPanning = false;
+            } else if (e.button === 0) {
+                isDrawing = false;
+            }
+        });
+
+        // Mousemove: draw or pan
+        canvas.addEventListener('mousemove', e => {
+            if (isPanning) {
+                offsetX = e.clientX - startPan.x;
+                offsetY = e.clientY - startPan.y;
+                draw();
+            } else if (isDrawing) {
+                const pos = screenToWorld(e.clientX, e.clientY);
+                drawLine(lastPos.x, lastPos.y, pos.x, pos.y);
+                lastPos = { x: pos.x, y: pos.y };
+                draw();
+            }
+        });
+
+        // Undo function
+        function undo() {
+            if (undoStack.length === 0) return;
+            const last = undoStack.pop();
+
+            // Save current state to redo
+            const snapshot = new Map();
+            chunks.forEach((chunk, key) => {
+                snapshot.set(key, chunk.ctx.getImageData(0, 0, chunk.canvas.width, chunk.canvas.height));
+            });
+            redoStack.push(snapshot);
+
+            // Restore last state
+            last.forEach((imgData, key) => {
+                const chunk = chunks.get(key);
+                if (chunk) chunk.ctx.putImageData(imgData, 0, 0);
+            });
+
+            draw();
+        }
+
+        // Redo function
+        function redo() {
+            if (redoStack.length === 0) return;
+            const last = redoStack.pop();
+
+            // Save current state to undo
+            const snapshot = new Map();
+            chunks.forEach((chunk, key) => {
+                snapshot.set(key, chunk.ctx.getImageData(0, 0, chunk.canvas.width, chunk.canvas.height));
+            });
+            undoStack.push(snapshot);
+
+            // Restore redo state
+            last.forEach((imgData, key) => {
+                const chunk = chunks.get(key);
+                if (chunk) chunk.ctx.putImageData(imgData, 0, 0);
+            });
+
+            draw();
+        }
+
+        // Keyboard shortcuts
+        window.addEventListener('keydown', e => {
+            if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'z') {
+                e.preventDefault();
+                undo();
+            } else if ((e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'z') ||
+                (e.ctrlKey && e.key.toLowerCase() === 'y')) {
+                e.preventDefault();
+                redo();
+            }
+        });
+
+
+
+        canvas.addEventListener('mousemove', e => {
+            if (isPanning) {
+                offsetX = e.clientX - startPan.x;
+                offsetY = e.clientY - startPan.y;
+                draw();
+            } else if (isDrawing) {
+                const pos = screenToWorld(e.clientX, e.clientY);
+                drawLine(lastPos.x, lastPos.y, pos.x, pos.y);
+                lastPos = { x: pos.x, y: pos.y };
+                draw();
+            }
+        });
+
+        canvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+            const wx = (mouseX - offsetX) / scale;
+            const wy = (mouseY - offsetY) / scale;
+            const delta = e.deltaY < 0 ? 1.1 : 0.9;
+            scale *= delta;
+            offsetX = mouseX - wx * scale;
+            offsetY = mouseY - wy * scale;
+            draw();
+        }, { passive: false });
+
+        // Toolbar
+        const brushBtn = document.getElementById('brushBtn');
+        const eraserBtn = document.getElementById('eraserBtn');
+        const colorPicker = document.getElementById('colorPicker');
+        const brushSizeInput = document.getElementById('brushSize');
+        brushBtn.onclick = () => { tool = 'brush'; };
+        eraserBtn.onclick = () => { tool = 'eraser'; };
+        colorPicker.oninput = e => { color = e.target.value; };
+        brushSizeInput.oninput = e => { brushSize = e.target.value; };
+
+        window.addEventListener('resize', () => { width = window.innerWidth; height = window.innerHeight; canvas.width = width; canvas.height = height; draw(); });
+
+        // Brush size presets
+        document.querySelectorAll('#brushPresets .brushPreset').forEach(btn => {
+            btn.onclick = () => {
+                brushSize = parseInt(btn.dataset.size);
+                brushSizeInput.value = brushSize;
+            };
+        });
+
+        // Color presets
+        document.querySelectorAll('#colorPresets .preset').forEach(btn => {
+            btn.onclick = () => {
+                color = btn.style.backgroundColor;
+                colorPicker.value = rgbToHex(color); 
+            };
+        });
+
+        // Clear canvas button
+        document.getElementById('clearBtn').onclick = () => {
+            chunks.clear(); 
+
+            draw();
+        };
+
+        // Helper function to convert rgb() to hex for color picker sync
+        function rgbToHex(rgb) {
+            if (rgb.startsWith('#')) return rgb; 
+            const rgbValues = rgb.match(/\d+/g).map(Number);
+            return '#' + rgbValues.map(v => v.toString(16).padStart(2, '0')).join('');
+        }
+
+        draw();
+    </script>
+</body>
+</html>
