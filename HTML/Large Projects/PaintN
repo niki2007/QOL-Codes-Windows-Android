@@ -17,6 +17,7 @@
         #brushBtn,
         #eraserBtn,
         #clearBtn,
+        #brushPreview,
         #toolbar input[type=color],
         #brushPresets .brushPreset {
             background: rgb(0, 0, 0, 0.20);
@@ -24,7 +25,9 @@
             border: 1px solid #555;
             padding: 5px 10px;
             cursor: pointer;
-            border-radius: 4px;
+            border: 1px solid #555;
+            outline: solid;
+            outline-color: rgb(100, 100, 100, 0.30);
         }
 
         #toolbar {
@@ -59,11 +62,26 @@
             #brushPresets .brushPreset {
                 width: 32px;
                 height: 32px;
-                border: 1px solid #555;
                 cursor: pointer;
                 padding: 0;
-                outline: none;
             }
+
+        #brushPreview {
+            width: 30px;
+            height: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #555;
+            border-radius: 4px;
+            font-size: 14px;
+
+            color: yellow;
+            background: rgb(255, 39, 39, 0.56);
+
+            outline-color: rgb(227, 243, 12, 0.30);
+        }
+
 
         #colorPresets {
             display: flex;
@@ -71,13 +89,11 @@
         }
 
             #colorPresets .preset {
-                width: 24px;
-                height: 24px;
-                border: 2px solid #555;
+                width: 20px;
+                height: 32px;
                 cursor: pointer;
+                align-self: center;
                 padding: 0;
-                outline: dashed;
-                outline-color: rgb(100, 100, 100, 0.30);
             }
 
     </style>
@@ -88,6 +104,8 @@
         <button id="eraserBtn">Eraser</button>
         <input type="color" id="colorPicker" value="#ffffff">
         <input type="range" id="brushSize" min="1" max="100" value="13">
+
+        <div id="brushPreview">13</div>
 
         <!-- Brush size presets -->
         <div id="brushPresets">
@@ -407,10 +425,15 @@
         const eraserBtn = document.getElementById('eraserBtn');
         const colorPicker = document.getElementById('colorPicker');
         const brushSizeInput = document.getElementById('brushSize');
+        const brushPreview = document.getElementById('brushPreview');
+
         brushBtn.onclick = () => { tool = 'brush'; };
         eraserBtn.onclick = () => { tool = 'eraser'; };
         colorPicker.oninput = e => { color = e.target.value; };
-        brushSizeInput.oninput = e => { brushSize = e.target.value; };
+        brushSizeInput.oninput = e => {
+            brushSize = e.target.value;
+            brushPreview.textContent = brushSize;
+        };
 
         window.addEventListener('resize', () => { width = window.innerWidth; height = window.innerHeight; canvas.width = width; canvas.height = height; draw(); });
 
@@ -419,6 +442,7 @@
             btn.onclick = () => {
                 brushSize = parseInt(btn.dataset.size);
                 brushSizeInput.value = brushSize;
+                brushPreview.textContent = brushSize;
             };
         });
 
