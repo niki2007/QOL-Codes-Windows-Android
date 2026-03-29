@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Obsidian-Like Canvas</title>
+    <title>PaintN</title>
     <style>
         html, body {
             margin: 0;
@@ -111,13 +111,13 @@
         <button id="brushBtn">Brush</button>
         <button id="eraserBtn">Eraser</button>
         <input type="color" id="colorPicker" value="#ffffff">
-        <input type="range" id="brushSize" min="1" max="100" value="13">
+        <input type="range" id="brushSize" min="1" max="100" value="8">
 
-        <div id="brushPreview">13</div>
+        <div id="brushPreview">8</div>
 
         <!-- Brush size presets -->
         <div id="brushPresets">
-            <button class="brushPreset" data-size="2">2</button>
+            <button class="brushPreset" data-size="8">8</button>
             <button class="brushPreset" data-size="13">13</button>
             <button class="brushPreset" data-size="18">18</button>
             <button class="brushPreset" data-size="25">25</button>
@@ -164,12 +164,12 @@
         let lastPos = { x: 0, y: 0 };
         let tool = 'brush';
         let color = '#ffffff';
-        let brushSize = 13;
+        let brushSize = 8;
         const gridSize = 50;
 
         // Store multiple small offscreen canvases for 'infinite' drawing
         const chunks = new Map();
-        const chunkSize = 2000;
+        const chunkSize = 1000;
 
         function getChunkKey(x, y) {
             const cx = Math.floor(x / chunkSize);
@@ -196,7 +196,10 @@
             const dx = x2 - x1;
             const dy = y2 - y1;
             const dist = Math.hypot(dx, dy);
-            const steps = Math.ceil(dist / 5); 
+
+            const steps = Math.ceil(dist / 5);
+
+            const margin = brushSize; // overlap amount
 
             for (let i = 0; i < steps; i++) {
                 const sx = x1 + (dx * i) / steps;
@@ -204,30 +207,38 @@
                 const nx = x1 + (dx * (i + 1)) / steps;
                 const ny = y1 + (dy * (i + 1)) / steps;
 
-                const chunk1 = getOrCreateChunk(sx, sy);
-                const chunk2 = getOrCreateChunk(nx, ny);
-                const chunksToDraw = new Set([chunk1, chunk2]);
+                // expand area: check nearby chunks too
+                for (let ox = -1; ox <= 1; ox++) {
+                    for (let oy = -1; oy <= 1; oy++) {
 
-                chunksToDraw.forEach(chunk => chunk.used = true); 
+                        const testX = sx + ox * margin;
+                        const testY = sy + oy * margin;
 
-                chunksToDraw.forEach(chunk => {
-                    const localX1 = sx - chunk.cx * chunkSize;
-                    const localY1 = sy - chunk.cy * chunkSize;
-                    const localX2 = nx - chunk.cx * chunkSize;
-                    const localY2 = ny - chunk.cy * chunkSize;
+                        const chunk = getOrCreateChunk(testX, testY);
+                        if (!chunk) continue;
 
-                    chunk.ctx.save();
-                    chunk.ctx.beginPath();
-                    chunk.ctx.moveTo(localX1, localY1);
-                    chunk.ctx.lineTo(localX2, localY2);
-                    chunk.ctx.lineWidth = brushSize;
-                    chunk.ctx.strokeStyle = tool === 'brush' ? color : 'rgba(0,0,0,1)';
-                    chunk.ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
-                    chunk.ctx.stroke();
-                    chunk.ctx.restore();
-                });
+                        chunk.used = true;
+
+                        const localX1 = sx - chunk.cx * chunkSize;
+                        const localY1 = sy - chunk.cy * chunkSize;
+                        const localX2 = nx - chunk.cx * chunkSize;
+                        const localY2 = ny - chunk.cy * chunkSize;
+
+                        chunk.ctx.save();
+                        chunk.ctx.beginPath();
+                        chunk.ctx.moveTo(localX1, localY1);
+                        chunk.ctx.lineTo(localX2, localY2);
+                        chunk.ctx.lineWidth = brushSize;
+                        chunk.ctx.strokeStyle = tool === 'brush' ? color : 'rgba(0,0,0,1)';
+                        chunk.ctx.globalCompositeOperation =
+                            tool === 'eraser' ? 'destination-out' : 'source-over';
+                        chunk.ctx.stroke();
+                        chunk.ctx.restore();
+                    }
+                }
             }
         }
+
 
         // Brush preview Coloring
         function updateBrushPreviewColor(size) {
@@ -245,7 +256,7 @@
             ctx.clearRect(0, 0, width, height);
 
             // Fine grid
-            ctx.strokeStyle = '#333';
+            ctx.strokeStyle = 'rgb(100, 100, 100, 0.10)';
             ctx.lineWidth = 1;
             const fineStep = 100 * scale; 
             for (let x = 0; x < width; x += fineStep) {
@@ -262,7 +273,7 @@
             }
 
             // Big grid
-            ctx.strokeStyle = '#383838'; 
+            ctx.strokeStyle = 'rgb(100, 100, 100, 0.10)'; 
             ctx.lineWidth = 2;
             const bigStep = 1000 * scale;
             for (let x = 0; x < width; x += bigStep) {
