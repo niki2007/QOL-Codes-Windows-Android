@@ -10,42 +10,43 @@ jobs:
     steps:
       - name: Send Discord message
         run: |
-          MSG=""
+          # Get details from the latest commit
+          AUTHOR="${{ github.event.head_commit.committer.name }}"
+          COMMITTER="${{ github.event.head_commit.committer.name }}"
+          MESSAGE="${{ github.event.head_commit.message }}"
+          DESCRIPTION="${{ github.event.head_commit.body }}"
+          BRANCH="${{ github.ref_name }}"
+          URL="${{ github.event.head_commit.url }}"
 
-          # Loop over all commits safely
-          for row in $(jq -c '.commits[]' <<< "${{ toJson(github.event.commits) }}"); do
-            AUTHOR=$(jq -r '.author.name' <<< "$row")
-            COMMITTER=$(jq -r '.committer.name' <<< "$row")
-            MESSAGE=$(jq -r '.message' <<< "$row")
-            DESCRIPTION=$(jq -r '.body' <<< "$row")
-            URL=$(jq -r '.url' <<< "$row")
+          # Determine display author (committer if different from author)
+          if [ "${{ github.event.head_commit.author.name }}" != "$COMMITTER" ]; then
+            DISPLAY_AUTHOR="$COMMITTER"
+          else
+            DISPLAY_AUTHOR="${{ github.event.head_commit.author.name }}"
+          fi
 
-            FILES=$(jq -r '.added[]? | "🖊 Created: \(. )"' <<< "$row")
-            FILES+=$'\n'
-            FILES+=$(jq -r '.modified[]? | "🔧 Updated: \(. )"' <<< "$row")
-            FILES+=$'\n'
-            FILES+=$(jq -r '.removed[]? | "❌ Removed: \(. )"' <<< "$row")
-
-            if [ "$AUTHOR" != "$COMMITTER" ]; then
-              DISPLAY_AUTHOR="$COMMITTER"
-            else
-              DISPLAY_AUTHOR="$AUTHOR"
-            fi
-
-            MSG+=$'\n'"$FILES"$'\n'
-            MSG+="Author: $DISPLAY_AUTHOR"$'\n'
-            MSG+="Commit Message: $MESSAGE"$'\n'
-            if [ "$DESCRIPTION" != "null" ] && [ "$DESCRIPTION" != "" ]; then
-              MSG+="Extended Description:\n\"$DESCRIPTION\""$'\n'
-            fi
-            MSG+="Branch: $GITHUB_REF_NAME"$'\n'
-            MSG+="🔗 $URL"$'\n\n'
+          # Build file changes
+          FILES=""
+          for f in ${{ toJson(github.event.head_commit.added) }}; do
+            FILES+="🖊 Created: $f"$'\n'
+          done
+          for f in ${{ toJson(github.event.head_commit.modified) }}; do
+            FILES+="🔧 Updated: $f"$'\n'
+          done
+          for f in ${{ toJson(github.event.head_commit.removed) }}; do
+            FILES+="❌ Removed: $f"$'\n'
           done
 
-          # Send to Discord
-          curl -H "Content-Type: application/json" \
-            -d "$(jq -n --arg content "$MSG" '{content: $content}')" \
-            ${{ secrets.DISCORD_WEBHOOK }}
+          # Build the final message
+          MSG="$FILES"
+          MSG+="Author: $DISPLAY_AUTHOR"$'\n'
+          MSG+="Commit Message: $MESSAGE"$'\n'
+          if [ "$DESCRIPTION" != "null" ] && [ "$DESCRIPTION" != "" ]; then
+            MSG+="Extended Description: \"$DESCRIPTION\""$'\n'
+          fi
+          MSG+="Branch: $BRANCH"$'\n'
+          MSG+="🔗 $URL"
 
-        env:
-          GITHUB_REF_NAME: ${{ github.ref_name }}
+          # Send to Discord
+          PAYLOAD=$(jq -n --arg content "$MSG" '{content: $content}')
+          curl -H "Content-Type: application/json" -d "$PAYLOAD" ${{ secrets.DISCORD_WEBHOOK }}
