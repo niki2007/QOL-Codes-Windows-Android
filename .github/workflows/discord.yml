@@ -10,44 +10,34 @@ jobs:
     steps:
       - name: Send Discord message
         run: |
-          COMMITS=$(jq -c '.commits[]' <<< "${{ toJson(github.event.commits) }}")
-          MSG=""
-
-          for C in $COMMITS; do
+          echo "${{ toJson(github.event.commits) }}" | jq -c '.[]' | while read -r C; do
             AUTHOR=$(jq -r '.author.name' <<< "$C")
             COMMITTER=$(jq -r '.committer.name' <<< "$C")
             MESSAGE=$(jq -r '.message' <<< "$C")
             DESCRIPTION=$(jq -r '.body' <<< "$C")
             URL=$(jq -r '.url' <<< "$C")
 
-            # Build file changes
             FILES=$(jq -r '.added[]? | "🖊 Created: \(. )"' <<< "$C")
             FILES+=$'\n'
             FILES+=$(jq -r '.modified[]? | "🔧 Updated: \(. )"' <<< "$C")
             FILES+=$'\n'
             FILES+=$(jq -r '.removed[]? | "❌ Removed: \(. )"' <<< "$C")
 
-            # Determine display author
             if [ "$AUTHOR" != "$COMMITTER" ]; then
               DISPLAY_AUTHOR="$COMMITTER"
             else
               DISPLAY_AUTHOR="$AUTHOR"
             fi
 
-            # Build message for this commit
-            MSG+=$'\n'"$FILES"$'\n'
-            MSG+="Author: $DISPLAY_AUTHOR"$'\n'
-            MSG+="Commit Message: $MESSAGE"$'\n'
+            COMMIT_MSG="\n$FILES\nAuthor: $DISPLAY_AUTHOR\nCommit Message: $MESSAGE"
             if [ "$DESCRIPTION" != "null" ] && [ "$DESCRIPTION" != "" ]; then
-              MSG+="Extended Description:\n\"$DESCRIPTION\""$'\n'
+              COMMIT_MSG+="\nExtended Description:\n\"$DESCRIPTION\""
             fi
-            MSG+="Branch: $GITHUB_REF_NAME"$'\n'
-            MSG+="🔗 $URL"$'\n\n'
-          done
+            COMMIT_MSG+="\nBranch: $GITHUB_REF_NAME\n🔗 $URL\n"
 
-          # Send to Discord
-          PAYLOAD=$(jq -n --arg content "$MSG" '{content: $content}')
-          curl -H "Content-Type: application/json" -d "$PAYLOAD" ${{ secrets.DISCORD_WEBHOOK }}
+            echo "$COMMIT_MSG"
+          done | jq -R -s --arg webhook "${{ secrets.DISCORD_WEBHOOK }}" \
+              '{content: .}' | curl -H "Content-Type: application/json" -d @- ${{ secrets.DISCORD_WEBHOOK }}
 
         env:
           GITHUB_REF_NAME: ${{ github.ref_name }}
