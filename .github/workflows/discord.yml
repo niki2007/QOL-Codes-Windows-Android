@@ -1,17 +1,16 @@
-name: Discord Notifications
+name: Discord Test
 
 on:
-  push:
+  push:  # triggers on any push
 
 jobs:
   notify:
     runs-on: ubuntu-latest
-
+    env:
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
     steps:
-      - name: Send Discord message
+      - name: Send test message
         run: |
           curl -H "Content-Type: application/json" \
-          -d "{
-            \"content\": \"🚀 **New commit pushed!**\n👤 Author: ${{ github.actor }}\n📝 Message: ${{ github.event.head_commit.message }}\n🌿 Branch: ${{ github.ref_name }}\n🔗 https://github.com/${{ github.repository }}/commit/${{ github.sha }}\"
-          }" \
-          ${{ secrets.DISCORD_WEBHOOK }}
+          -d "{\"content\": \"✅ Test message from GitHub Actions!\"}" \
+          $DISCORD_WEBHOOK
