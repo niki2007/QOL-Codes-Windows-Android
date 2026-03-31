@@ -10,16 +10,19 @@ jobs:
     steps:
       - name: Send Discord message
         run: |
-          TITLE="${{ github.event.head_commit.message }}"
-          BODY="${{ github.event.head_commit.body }}"
+          FULL_MSG="${{ github.event.head_commit.message }}"
           AUTHOR="${{ github.actor }}"
           BRANCH="${{ github.ref_name }}"
           URL="${{ github.event.head_commit.url }}"
 
+          # Split message into title and body
+          TITLE=$(echo "$FULL_MSG" | head -n1)
+          BODY=$(echo "$FULL_MSG" | tail -n +2)
+
           MSG="$TITLE"$'\n'
           MSG+="Author: $AUTHOR"$'\n'
 
-          if [ -n "$BODY" ] && [ "$BODY" != "null" ]; then
+          if [ -n "$BODY" ]; then
             MSG+="Extended Description: \"$BODY\""$'\n'
           fi
 
