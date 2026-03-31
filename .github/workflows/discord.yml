@@ -17,7 +17,7 @@ jobs:
             --arg branch "${{ github.ref_name }}" \
             --arg url "${{ github.event.head_commit.url }}" \
             '{
-              content: "\($title)\nAuthor: \($author)\n\($body|select(. != null and . != "") | "Extended Description: \"\(. )\"")\nBranch: \($branch)\n🔗 \($url)"
+              content: "\($title)\nAuthor: \($author)\n\($body|select(. != null) | "Extended Description: \"\(. )\"")\nBranch: \($branch)\n🔗 \($url)"
             }'
           )
 
