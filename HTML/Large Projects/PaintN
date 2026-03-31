@@ -165,6 +165,9 @@
         let scale = 0.5;
         let offsetX = 0;
         let offsetY = 0;
+        let isLineMode = false;
+        let lineStart = null;
+        let previewPos = null;
         let isPanning = false;
         let startPan = { x: 0, y: 0 };
         let isDrawing = false;
@@ -173,6 +176,7 @@
         let color = '#ffffff';
         let brushSize = 8;
         const gridSize = 50;
+
 
         // Store multiple small offscreen canvases for 'infinite' drawing
         const chunks = new Map();
@@ -334,34 +338,51 @@
 
         // Mousedown: start drawing or panning
         canvas.addEventListener('mousedown', e => {
-            if (e.button === 1) { // middle mouse for panning
+            if (e.button === 1) {
                 isPanning = true;
                 startPan = { x: e.clientX - offsetX, y: e.clientY - offsetY };
-            } else if (e.button === 0) { // left mouse for drawing
-                isDrawing = true;
+
+            } else if (e.button === 0) {
+
                 const pos = screenToWorld(e.clientX, e.clientY);
-                lastPos = { x: pos.x, y: pos.y };
 
-                // Save snapshot for undo BEFORE starting stroke
-                const snapshot = new Map();
-                chunks.forEach((chunk, key) => {
-                    snapshot.set(key, chunk.ctx.getImageData(0, 0, chunk.canvas.width, chunk.canvas.height));
-                });
-                undoStack.push(snapshot);
-                if (undoStack.length > maxHistory) undoStack.shift();
+                if (isLineMode) {
+                    lineStart = pos;
+                    previewPos = pos;
 
-                // Clear redo stack because new stroke invalidates redo
-                redoStack.length = 0;
+                } else {
+                    isDrawing = true;
+                    lastPos = { x: pos.x, y: pos.y };
+
+                    const snapshot = new Map();
+                    chunks.forEach((chunk, key) => {
+                        snapshot.set(key, chunk.ctx.getImageData(0, 0, chunk.canvas.width, chunk.canvas.height));
+                    });
+
+                    undoStack.push(snapshot);
+                    if (undoStack.length > maxHistory) undoStack.shift();
+
+                    redoStack.length = 0;
+                }
             }
         });
+
 
         // Mouseup: stop drawing or panning
         canvas.addEventListener('mouseup', e => {
             if (e.button === 1) {
                 isPanning = false;
             } else if (e.button === 0) {
-                isDrawing = false;
+                if (isLineMode && lineStart && previewPos) {
+                    drawLine(lineStart.x, lineStart.y, previewPos.x, previewPos.y);
+                    lineStart = null;
+                    previewPos = null;
+                    draw();
+                } else {
+                    isDrawing = false;
+                }
             }
+
         });
 
         // Mousemove: draw or pan
@@ -375,6 +396,9 @@
                 drawLine(lastPos.x, lastPos.y, pos.x, pos.y);
                 lastPos = { x: pos.x, y: pos.y };
                 draw();
+            } else if (isLineMode && lineStart) {
+                previewPos = screenToWorld(e.clientX, e.clientY);
+                draw(); 
             }
         });
 
@@ -498,7 +522,6 @@
 
         document.addEventListener('keydown', (e) => {
             if (e.key.toLowerCase() === 'f') {
-                // toggle visibility
                 if (fillBtn.style.display === 'none') {
                     fillBtn.style.display = 'inline-block';
                 } else {
@@ -560,6 +583,19 @@
                 brushPreview.textContent = brushSize;
                 updateBrushPreviewColor(brushSize);
             };
+        });
+
+        // Drawing a straight line
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Shift') isLineMode = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'Shift') {
+                isLineMode = false;
+                lineStart = null;
+                previewPos = null;
+            }
         });
 
         // Color presets
