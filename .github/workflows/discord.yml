@@ -10,11 +10,16 @@ jobs:
     steps:
       - name: Send Discord message
         run: |
-          MSG=$(jq -Rn --arg m "${{ github.event.head_commit.message }}" \
-            '{content: "🚀 **New commit pushed!**\n👤 Author: $ENV_GITHUB_ACTOR\n📝 Message: \($m)\n🌿 Branch: $ENV_GITHUB_REF_NAME\n🔗 https://github.com/$ENV_GITHUB_REPOSITORY/commit/$ENV_GITHUB_SHA"}')
+          MSG=$(jq -Rn \
+            --arg actor "$GITHUB_ACTOR" \
+            --arg branch "$GITHUB_REF_NAME" \
+            --arg repo "$GITHUB_REPOSITORY" \
+            --arg sha "$GITHUB_SHA" \
+            --arg message "${{ github.event.head_commit.message }}" \
+            '{content: "🚀 **New commit pushed!**\n👤 Author: \($actor)\n📝 Message: \($message)\n🌿 Branch: \($branch)\n🔗 https://github.com/\($repo)/commit/\($sha)"}')
           curl -H "Content-Type: application/json" -d "$MSG" ${{ secrets.DISCORD_WEBHOOK }}
         env:
-          ENV_GITHUB_ACTOR: ${{ github.actor }}
-          ENV_GITHUB_REF_NAME: ${{ github.ref_name }}
-          ENV_GITHUB_REPOSITORY: ${{ github.repository }}
-          ENV_GITHUB_SHA: ${{ github.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
