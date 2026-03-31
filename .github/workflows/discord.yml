@@ -10,15 +10,21 @@ jobs:
     steps:
       - name: Send Discord message
         run: |
-          PAYLOAD=$(jq -n \
-            --arg title "${{ github.event.head_commit.message }}" \
-            --arg author "${{ github.event.head_commit.author.name }}" \
-            --arg body "${{ github.event.head_commit.body }}" \
-            --arg branch "${{ github.ref_name }}" \
-            --arg url "${{ github.event.head_commit.url }}" \
-            '{
-              content: "\($title)\nAuthor: \($author)\n\($body|select(. != null) | "Extended Description: \"\(. )\"")\nBranch: \($branch)\n🔗 \($url)"
-            }'
-          )
+          TITLE="${{ github.event.head_commit.message }}"
+          BODY="${{ github.event.head_commit.body }}"
+          AUTHOR="${{ github.actor }}"
+          BRANCH="${{ github.ref_name }}"
+          URL="${{ github.event.head_commit.url }}"
 
+          MSG="$TITLE"$'\n'
+          MSG+="Author: $AUTHOR"$'\n'
+
+          if [ -n "$BODY" ] && [ "$BODY" != "null" ]; then
+            MSG+="Extended Description: \"$BODY\""$'\n'
+          fi
+
+          MSG+="Branch: $BRANCH"$'\n'
+          MSG+="🔗 $URL"
+
+          PAYLOAD=$(jq -Rn --arg content "$MSG" '{content: $content}')
           curl -H "Content-Type: application/json" -d "$PAYLOAD" ${{ secrets.DISCORD_WEBHOOK }}
