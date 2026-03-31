@@ -10,18 +10,21 @@ jobs:
     steps:
       - name: Send Discord message
         run: |
-          echo "${{ toJson(github.event.commits) }}" | jq -c '.[]' | while read -r C; do
-            AUTHOR=$(jq -r '.author.name' <<< "$C")
-            COMMITTER=$(jq -r '.committer.name' <<< "$C")
-            MESSAGE=$(jq -r '.message' <<< "$C")
-            DESCRIPTION=$(jq -r '.body' <<< "$C")
-            URL=$(jq -r '.url' <<< "$C")
+          MSG=""
 
-            FILES=$(jq -r '.added[]? | "🖊 Created: \(. )"' <<< "$C")
+          # Loop over all commits safely
+          for row in $(jq -c '.commits[]' <<< "${{ toJson(github.event.commits) }}"); do
+            AUTHOR=$(jq -r '.author.name' <<< "$row")
+            COMMITTER=$(jq -r '.committer.name' <<< "$row")
+            MESSAGE=$(jq -r '.message' <<< "$row")
+            DESCRIPTION=$(jq -r '.body' <<< "$row")
+            URL=$(jq -r '.url' <<< "$row")
+
+            FILES=$(jq -r '.added[]? | "🖊 Created: \(. )"' <<< "$row")
             FILES+=$'\n'
-            FILES+=$(jq -r '.modified[]? | "🔧 Updated: \(. )"' <<< "$C")
+            FILES+=$(jq -r '.modified[]? | "🔧 Updated: \(. )"' <<< "$row")
             FILES+=$'\n'
-            FILES+=$(jq -r '.removed[]? | "❌ Removed: \(. )"' <<< "$C")
+            FILES+=$(jq -r '.removed[]? | "❌ Removed: \(. )"' <<< "$row")
 
             if [ "$AUTHOR" != "$COMMITTER" ]; then
               DISPLAY_AUTHOR="$COMMITTER"
@@ -29,15 +32,20 @@ jobs:
               DISPLAY_AUTHOR="$AUTHOR"
             fi
 
-            COMMIT_MSG="\n$FILES\nAuthor: $DISPLAY_AUTHOR\nCommit Message: $MESSAGE"
+            MSG+=$'\n'"$FILES"$'\n'
+            MSG+="Author: $DISPLAY_AUTHOR"$'\n'
+            MSG+="Commit Message: $MESSAGE"$'\n'
             if [ "$DESCRIPTION" != "null" ] && [ "$DESCRIPTION" != "" ]; then
-              COMMIT_MSG+="\nExtended Description:\n\"$DESCRIPTION\""
+              MSG+="Extended Description:\n\"$DESCRIPTION\""$'\n'
             fi
-            COMMIT_MSG+="\nBranch: $GITHUB_REF_NAME\n🔗 $URL\n"
+            MSG+="Branch: $GITHUB_REF_NAME"$'\n'
+            MSG+="🔗 $URL"$'\n\n'
+          done
 
-            echo "$COMMIT_MSG"
-          done | jq -R -s --arg webhook "${{ secrets.DISCORD_WEBHOOK }}" \
-              '{content: .}' | curl -H "Content-Type: application/json" -d @- ${{ secrets.DISCORD_WEBHOOK }}
+          # Send to Discord
+          curl -H "Content-Type: application/json" \
+            -d "$(jq -n --arg content "$MSG" '{content: $content}')" \
+            ${{ secrets.DISCORD_WEBHOOK }}
 
         env:
           GITHUB_REF_NAME: ${{ github.ref_name }}
