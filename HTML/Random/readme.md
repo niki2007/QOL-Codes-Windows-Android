@@ -4,6 +4,7 @@
 
 
 
+
 <details>
   <summary><b>Emoji Viewer 🐯</b></summary>
 Super simple code that displays all emojis. 😸 😹
