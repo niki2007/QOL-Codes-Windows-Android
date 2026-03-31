@@ -20,6 +20,7 @@ Generates random backgrounds (images) based on inputs. Has a button to save it a
 
 
 
+
 <details>
   <summary><b>Fast Drawing Maker 🖌️</b></summary>
 Generates a basic canvas that you can just save as blank image with defined height and width in PX. You can also draw something very simple on the canvas with basic brush. 🖌️
