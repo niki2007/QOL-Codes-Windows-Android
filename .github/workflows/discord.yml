@@ -17,7 +17,7 @@ jobs:
 
           # Split message into title and body
           TITLE=$(echo "$FULL_MSG" | head -n1)
-          BODY=$(echo "$FULL_MSG" | tail -n +2)
+          BODY=$(echo "$FULL_MSG" | tail -n +2 | sed '/./,$!d')
 
           MSG="$TITLE"$'\n'
           MSG+="Author: $AUTHOR"$'\n'
