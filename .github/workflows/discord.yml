@@ -19,6 +19,19 @@ jobs:
           TITLE=$(echo "$FULL_MSG" | head -n1)
           BODY=$(echo "$FULL_MSG" | tail -n +2 | sed '/./,$!d')
 
+          # Add emoji based on title
+          if [[ "$TITLE" == Update* ]]; then
+            TITLE="🔧 $TITLE"
+          elif [[ "$TITLE" == Create* ]]; then
+            TITLE="🖊 $TITLE"
+          elif [[ "$TITLE" == Rename* ]]; then
+            TITLE="✏️ $TITLE"
+          elif [[ "$TITLE" == Delete* ]] || [[ "$TITLE" == Remove* ]]; then
+            TITLE="❌ $TITLE"
+          else
+            TITLE="📦 $TITLE"
+          fi
+          
           MSG="$TITLE"$'\n'
           MSG+="Author: $AUTHOR"$'\n'
 
