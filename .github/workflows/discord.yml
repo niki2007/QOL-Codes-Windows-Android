@@ -10,16 +10,44 @@ jobs:
     steps:
       - name: Send Discord message
         run: |
-          MSG=$(jq -Rn \
-            --arg actor "$GITHUB_ACTOR" \
-            --arg branch "$GITHUB_REF_NAME" \
-            --arg repo "$GITHUB_REPOSITORY" \
-            --arg sha "$GITHUB_SHA" \
-            --arg message "${{ github.event.head_commit.message }}" \
-            '{content: "🚀 **New commit pushed!**\n👤 Author: \($actor)\n📝 Message: \($message)\n🌿 Branch: \($branch)\n🔗 https://github.com/\($repo)/commit/\($sha)"}')
-          curl -H "Content-Type: application/json" -d "$MSG" ${{ secrets.DISCORD_WEBHOOK }}
+          COMMITS=$(jq -c '.commits[]' <<< "${{ toJson(github.event.commits) }}")
+          MSG=""
+
+          for C in $COMMITS; do
+            AUTHOR=$(jq -r '.author.name' <<< "$C")
+            COMMITTER=$(jq -r '.committer.name' <<< "$C")
+            MESSAGE=$(jq -r '.message' <<< "$C")
+            DESCRIPTION=$(jq -r '.body' <<< "$C")
+            URL=$(jq -r '.url' <<< "$C")
+
+            # Build file changes
+            FILES=$(jq -r '.added[]? | "🖊 Created: \(. )"' <<< "$C")
+            FILES+=$'\n'
+            FILES+=$(jq -r '.modified[]? | "🔧 Updated: \(. )"' <<< "$C")
+            FILES+=$'\n'
+            FILES+=$(jq -r '.removed[]? | "❌ Removed: \(. )"' <<< "$C")
+
+            # Determine display author
+            if [ "$AUTHOR" != "$COMMITTER" ]; then
+              DISPLAY_AUTHOR="$COMMITTER"
+            else
+              DISPLAY_AUTHOR="$AUTHOR"
+            fi
+
+            # Build message for this commit
+            MSG+=$'\n'"$FILES"$'\n'
+            MSG+="Author: $DISPLAY_AUTHOR"$'\n'
+            MSG+="Commit Message: $MESSAGE"$'\n'
+            if [ "$DESCRIPTION" != "null" ] && [ "$DESCRIPTION" != "" ]; then
+              MSG+="Extended Description:\n\"$DESCRIPTION\""$'\n'
+            fi
+            MSG+="Branch: $GITHUB_REF_NAME"$'\n'
+            MSG+="🔗 $URL"$'\n\n'
+          done
+
+          # Send to Discord
+          PAYLOAD=$(jq -n --arg content "$MSG" '{content: $content}')
+          curl -H "Content-Type: application/json" -d "$PAYLOAD" ${{ secrets.DISCORD_WEBHOOK }}
+
         env:
-          GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_REF_NAME: ${{ github.ref_name }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_SHA: ${{ github.sha }}
