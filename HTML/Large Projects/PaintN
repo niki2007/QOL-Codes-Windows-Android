@@ -18,6 +18,8 @@
         #eraserBtn,
         #clearBtn,
         #brushPreview,
+        #saveBtn,
+        #loadBtn,
         #toolbar input[type=color],
         #brushPresets .brushPreset {
             background: rgb(0, 0, 0, 0.20);
@@ -137,6 +139,11 @@
             <button class="preset" style="background:#00ffff"></button>
             <button class="preset" style="background:#000000"></button>
         </div>
+
+        <!-- Saving -->
+        <button id="saveBtn">Save</button>
+        <button id="loadBtn">Load</button>
+        <input type="file" id="fileInput" style="display:none" accept="application/json">
 
         <!-- Clear canvas button -->
         <button id="clearBtn">Clear Canvas</button>
@@ -413,6 +420,67 @@
             draw();
         }
 
+        // Save
+        function saveCanvas() {
+            const data = [];
+
+            chunks.forEach((chunk, key) => {
+                data.push({
+                    cx: chunk.cx,
+                    cy: chunk.cy,
+                    image: chunk.canvas.toDataURL()
+                });
+            });
+
+            const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+
+            const link = document.createElement('a');
+            link.download = "drawing.json";
+            link.href = URL.createObjectURL(blob);
+            link.click();
+        }
+        // Load
+        function loadCanvas(file) {
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                const data = JSON.parse(e.target.result);
+
+                chunks.clear();
+
+                data.forEach(item => {
+                    const c = document.createElement('canvas');
+                    c.width = chunkSize;
+                    c.height = chunkSize;
+
+                    const cCtx = c.getContext('2d');
+                    cCtx.imageSmoothingEnabled = false;
+                    cCtx.lineCap = 'round';
+                    cCtx.lineJoin = 'round';
+
+                    const img = new Image();
+                    img.onload = () => {
+                        cCtx.drawImage(img, 0, 0);
+                        draw();
+                    };
+                    img.src = item.image;
+
+                    chunks.set(`${item.cx},${item.cy}`, {
+                        canvas: c,
+                        ctx: cCtx,
+                        cx: item.cx,
+                        cy: item.cy,
+                        used: true
+                    });
+                });
+
+                draw();
+            };
+
+            reader.readAsText(file);
+        }
+
+
         // Keyboard shortcuts
         window.addEventListener('keydown', e => {
             if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'z') {
@@ -508,6 +576,21 @@
 
             draw();
         };
+
+        // Save button
+        document.getElementById('saveBtn').onclick = saveCanvas;
+        // Load button
+        const fileInput = document.getElementById('fileInput');
+
+        document.getElementById('loadBtn').onclick = () => {
+            fileInput.click();
+        };
+
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) loadCanvas(file);
+        };
+
 
         // Helper function to convert rgb() to hex for color picker sync
         function rgbToHex(rgb) {
