@@ -10,8 +10,11 @@ jobs:
     steps:
       - name: Send Discord message
         run: |
-          curl -H "Content-Type: application/json" \
-          -d "{
-            \"content\": \"🚀 **New commit pushed!**\n👤 Author: ${{ github.actor }}\n📝 Message: ${{ github.event.head_commit.message }}\n🌿 Branch: ${{ github.ref_name }}\n🔗 https://github.com/${{ github.repository }}/commit/${{ github.sha }}\"
-          }" \
-          ${{ secrets.DISCORD_WEBHOOK }}
+          MSG=$(jq -Rn --arg m "${{ github.event.head_commit.message }}" \
+            '{content: "🚀 **New commit pushed!**\n👤 Author: $ENV_GITHUB_ACTOR\n📝 Message: \($m)\n🌿 Branch: $ENV_GITHUB_REF_NAME\n🔗 https://github.com/$ENV_GITHUB_REPOSITORY/commit/$ENV_GITHUB_SHA"}')
+          curl -H "Content-Type: application/json" -d "$MSG" ${{ secrets.DISCORD_WEBHOOK }}
+        env:
+          ENV_GITHUB_ACTOR: ${{ github.actor }}
+          ENV_GITHUB_REF_NAME: ${{ github.ref_name }}
+          ENV_GITHUB_REPOSITORY: ${{ github.repository }}
+          ENV_GITHUB_SHA: ${{ github.sha }}
