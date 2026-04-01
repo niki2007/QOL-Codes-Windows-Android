@@ -210,7 +210,7 @@
 
             const steps = Math.ceil(dist / 5);
 
-            const margin = brushSize; // overlap amount
+            const margin = brushSize;
 
             for (let i = 0; i < steps; i++) {
                 const sx = x1 + (dx * i) / steps;
@@ -426,10 +426,12 @@
         // Image Paste 
         function pasteImageToWorld(img) {
 
-            // scale based on zoom (zoomed out = bigger image)
-            const zoomFactor = 0.5 / scale;
-            const drawWidth = img.width * zoomFactor;
-            const drawHeight = img.height * zoomFactor;
+            const zoomFactor = 1 / scale;
+            const baseHeight = 600;
+            const drawHeight = baseHeight * zoomFactor;
+            const aspect = img.width / img.height;
+            const drawWidth = drawHeight * aspect;
+
 
             // center of screen → world coords
             const centerX = (canvas.width / 2 - offsetX) / scale;
