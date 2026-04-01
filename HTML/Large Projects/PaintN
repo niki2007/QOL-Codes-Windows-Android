@@ -423,6 +423,70 @@
             draw();
         }
 
+        // Image Paste 
+        function pasteImageToWorld(img) {
+
+            // scale based on zoom (zoomed out = bigger image)
+            const zoomFactor = 0.5 / scale;
+            const drawWidth = img.width * zoomFactor;
+            const drawHeight = img.height * zoomFactor;
+
+            // center of screen → world coords
+            const centerX = (canvas.width / 2 - offsetX) / scale;
+            const centerY = (canvas.height / 2 - offsetY) / scale;
+
+            const startX = centerX - drawWidth / 2;
+            const startY = centerY - drawHeight / 2;
+
+            // determine chunk range to cover FULL image
+            const minCX = Math.floor(startX / chunkSize);
+            const minCY = Math.floor(startY / chunkSize);
+            const maxCX = Math.floor((startX + drawWidth) / chunkSize);
+            const maxCY = Math.floor((startY + drawHeight) / chunkSize);
+
+            for (let cx = minCX; cx <= maxCX; cx++) {
+                for (let cy = minCY; cy <= maxCY; cy++) {
+
+                    const chunk = getOrCreateChunk(cx * chunkSize, cy * chunkSize);
+
+                    const chunkWorldX = cx * chunkSize;
+                    const chunkWorldY = cy * chunkSize;
+
+                    // overlap between image and this chunk
+                    const overlapX = Math.max(startX, chunkWorldX);
+                    const overlapY = Math.max(startY, chunkWorldY);
+                    const overlapEndX = Math.min(startX + drawWidth, chunkWorldX + chunkSize);
+                    const overlapEndY = Math.min(startY + drawHeight, chunkWorldY + chunkSize);
+
+                    const overlapW = overlapEndX - overlapX;
+                    const overlapH = overlapEndY - overlapY;
+
+                    if (overlapW <= 0 || overlapH <= 0) continue;
+
+                    // map to image space
+                    const imgX = (overlapX - startX) / drawWidth * img.width;
+                    const imgY = (overlapY - startY) / drawHeight * img.height;
+                    const imgW = overlapW / drawWidth * img.width;
+                    const imgH = overlapH / drawHeight * img.height;
+
+                    const localX = overlapX - chunkWorldX;
+                    const localY = overlapY - chunkWorldY;
+
+                    chunk.ctx.drawImage(
+                        img,
+                        imgX, imgY, imgW, imgH,
+                        localX, localY, overlapW, overlapH
+                    );
+
+                    chunk.used = true;
+                }
+            }
+
+            draw();
+        }
+
+
+
         // Redo function
         function redo() {
             if (redoStack.length === 0) return;
@@ -584,6 +648,25 @@
                 updateBrushPreviewColor(brushSize);
             };
         });
+
+        // Image Paste
+        document.addEventListener('paste', (e) => {
+            const items = e.clipboardData.items;
+
+            for (let item of items) {
+                if (item.type.startsWith('image')) {
+                    const file = item.getAsFile();
+                    const img = new Image();
+
+                    img.onload = () => {
+                        pasteImageToWorld(img);
+                    };
+
+                    img.src = URL.createObjectURL(file);
+                }
+            }
+        });
+
 
         // Drawing a straight line
         document.addEventListener('keydown', (e) => {
