@@ -1,4 +1,4 @@
-﻿// GLOBALS
+// GLOBALS
 let currentVideo = null;
 let volumeSlider = null;
 let isFullscreen = false;
@@ -43,6 +43,18 @@ function baseContainerStyle(container) {
 /* ============================
    VOLUME BOX
 ============================ */
+let audioCtx, gainNode, sourceNode;
+
+function setupAudioAmplifier(video) {
+    if (audioCtx) return; 
+
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    sourceNode = audioCtx.createMediaElementSource(video);
+    gainNode = audioCtx.createGain();
+    sourceNode.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+}
+
 function createVolumeBox(video) {
     if (document.getElementById('custom-volume-box')) return;
 
@@ -52,43 +64,83 @@ function createVolumeBox(video) {
 
     baseContainerStyle(box);
 
+    // MAIN VOLUME SLIDER
     const slider = document.createElement('input');
     slider.type = 'range';
     slider.min = '0';
     slider.max = '1';
-    slider.step = '0.0005';
+    slider.step = '0.001';
     slider.value = getSavedVolume();
-
     volumeSlider = slider;
-    applySavedVolume(video);
 
     Object.assign(slider.style, {
         width: '1000px',
         height: '36px',
         opacity: '0',
-        transition: 'opacity 0.8s ease'
+        transition: 'opacity 0.8s ease',
+        display: 'block'
+    });
+
+    // AMPLIFIER SLIDER
+    const ampSlider = document.createElement('input');
+    ampSlider.type = 'range';
+    ampSlider.min = '1';
+    ampSlider.max = '10';
+    ampSlider.step = '0.1';
+    ampSlider.value = '1';
+
+    Object.assign(ampSlider.style, {
+        width: '300px',
+        height: '36px',
+        marginTop: '6px',
+        accentColor: 'yellow',
+        opacity: '0',
+        transition: 'opacity 0.8s ease',
+        display: 'block'
+    });
+
+    // APPLY VOLUME + AMPLIFIER
+    function applyVolume() {
+        const vol = parseFloat(slider.value);
+        const amp = parseFloat(ampSlider.value);
+
+        if (audioCtx && gainNode) {
+            gainNode.gain.value = vol * amp;
+        } else if (currentVideo) {
+            currentVideo.volume = vol; 
+        }
+    }
+
+    slider.addEventListener('input', () => {
+        localStorage.setItem('customVolume', slider.value);
+        applyVolume();
+    });
+
+    ampSlider.addEventListener('input', () => {
+        localStorage.setItem('volumeAmplifier', ampSlider.value);
+        applyVolume();
     });
 
     box.addEventListener('mouseenter', () => {
         box.style.width = '1000px';
         box.style.transform = 'scale(1)';
         slider.style.opacity = '1';
+        ampSlider.style.opacity = '1';
     });
 
     box.addEventListener('mouseleave', () => {
         box.style.width = '40px';
         box.style.transform = 'scale(0.95)';
         slider.style.opacity = '0';
-    });
-
-    slider.addEventListener('input', () => {
-        const vol = parseFloat(slider.value);
-        localStorage.setItem('customVolume', vol);
-        if (currentVideo) currentVideo.volume = vol;
+        ampSlider.style.opacity = '0';
     });
 
     box.appendChild(slider);
+    box.appendChild(ampSlider);
     document.body.appendChild(box);
+
+    setupAudioAmplifier(video); // hook the video into Web Audio API
+    applyVolume(); // initial set
 }
 
 /* ============================
@@ -99,7 +151,7 @@ function createSkipBox() {
 
     const box = document.createElement('div');
     box.id = 'custom-skip-box';
-    box.style.top = '108px';
+    box.style.top = '138px';
 
     baseContainerStyle(box);
 
