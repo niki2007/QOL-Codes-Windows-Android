@@ -75,7 +75,7 @@ function createVolumeBox(video) {
 
     Object.assign(slider.style, {
         width: '1000px',
-        height: '36px',
+        height: '20px',
         opacity: '0',
         transition: 'opacity 0.8s ease',
         display: 'block'
@@ -91,7 +91,7 @@ function createVolumeBox(video) {
 
     Object.assign(ampSlider.style, {
         width: '300px',
-        height: '36px',
+        height: '20px',
         marginTop: '6px',
         accentColor: 'yellow',
         opacity: '0',
@@ -151,7 +151,7 @@ function createSkipBox() {
 
     const box = document.createElement('div');
     box.id = 'custom-skip-box';
-    box.style.top = '138px';
+    box.style.top = '112px';
 
     baseContainerStyle(box);
 
@@ -228,7 +228,7 @@ function setupVideoSync(video) {
         if (Math.abs(currentVideo.volume - saved) > 0.001) {
             applySavedVolume(currentVideo);
         }
-    }, 1000);
+    }, 300);
 }
 
 /* ============================
