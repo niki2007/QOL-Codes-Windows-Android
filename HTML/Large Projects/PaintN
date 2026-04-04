@@ -95,11 +95,11 @@
 
         #colorPresets {
             display: flex;
-            gap: 6px;
+            gap: 3px;
         }
 
             #colorPresets .preset {
-                width: 20px;
+                width: 18px;
                 height: 32px;
                 cursor: pointer;
                 align-self: center;
@@ -119,11 +119,12 @@
 
         <!-- Brush size presets -->
         <div id="brushPresets">
+            <button class="brushPreset" data-size="4">4</button>
             <button class="brushPreset" data-size="8">8</button>
             <button class="brushPreset" data-size="13">13</button>
-            <button class="brushPreset" data-size="18">18</button>
             <button class="brushPreset" data-size="25">25</button>
             <button class="brushPreset" data-size="50">50</button>
+            <button class="brushPreset" data-size="100">100</button>
 
             <button class="brushPreset" id="fillBtn" data-size="9989" style="display:none;">Fill</button>
         </div>
@@ -255,9 +256,9 @@
         function updateBrushPreviewColor(size) {
             size = Math.max(0, Math.min(100, size));
 
-            const r = Math.round(230 + (25 * (size / 100)));
-            const g = Math.round(230 + (25 * (size / 100)));
-            const b = Math.round(200 + (55 * (size / 100)));  
+            const r = Math.round(240 + (15 * (size / 100)));
+            const g = Math.round(240 + (15 * (size / 100)));
+            const b = Math.round(50 + (205 * (size / 100)));  
 
             brushPreview.style.color = `rgb(${r}, ${g}, ${b})`;
         }
@@ -267,7 +268,7 @@
             ctx.clearRect(0, 0, width, height);
 
             // Fine grid
-            ctx.strokeStyle = 'rgb(100, 100, 100, 0.10)';
+            ctx.strokeStyle = 'rgb(100, 100, 100, 0.15)';
             ctx.lineWidth = 1;
             const fineStep = 100 * scale; 
             for (let x = 0; x < width; x += fineStep) {
@@ -284,7 +285,7 @@
             }
 
             // Big grid
-            ctx.strokeStyle = 'rgb(100, 100, 100, 0.10)'; 
+            ctx.strokeStyle = 'rgb(100, 100, 100, 0.05)'; 
             ctx.lineWidth = 2;
             const bigStep = 1000 * scale;
             for (let x = 0; x < width; x += bigStep) {
@@ -304,7 +305,7 @@
             chunks.forEach(chunk => {
                 if (chunk.used) {
                     ctx.save();
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
                     ctx.lineWidth = 2;
                     const screenX = offsetX + chunk.cx * chunkSize * scale;
                     const screenY = offsetY + chunk.cy * chunkSize * scale;
