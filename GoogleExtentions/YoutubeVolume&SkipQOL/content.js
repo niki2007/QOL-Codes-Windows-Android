@@ -92,12 +92,33 @@ function createVolumeBox(video) {
     Object.assign(ampSlider.style, {
         width: '300px',
         height: '20px',
-        marginTop: '6px',
         accentColor: 'yellow',
-        opacity: '0',
-        transition: 'opacity 0.8s ease',
         display: 'block'
     });
+
+    // LOCK BUTTON
+    let locked = false;
+
+    const lockBtn = document.createElement('button');
+    lockBtn.textContent = 'L';
+    Object.assign(lockBtn.style, {
+        background: 'rgba(255,255,255,0.15)',
+        border: 'none',
+        color: 'white',
+        fontSize: '14px',
+        padding: '4px 8px',
+        borderRadius: '6px',
+        cursor: 'pointer'
+    });
+
+    lockBtn.onclick = () => {
+        locked = !locked;
+        lockBtn.textContent = locked ? 'L' : 'L';
+        lockBtn.style.background = locked ? 'rgba(255,200,0,0.3)' : 'rgba(255,255,255,0.15)';
+    };
+
+    lockBtn.onmouseenter = () => lockBtn.style.background = locked ? 'rgba(255,200,0,0.4)' : 'rgba(255,255,255,0.3)';
+    lockBtn.onmouseleave = () => lockBtn.style.background = locked ? 'rgba(255,200,0,0.3)' : 'rgba(255,255,255,0.15)';
 
     // APPLY VOLUME + AMPLIFIER
     function applyVolume() {
@@ -107,7 +128,7 @@ function createVolumeBox(video) {
         if (audioCtx && gainNode) {
             gainNode.gain.value = vol * amp;
         } else if (currentVideo) {
-            currentVideo.volume = vol; 
+            currentVideo.volume = vol;
         }
     }
 
@@ -121,26 +142,40 @@ function createVolumeBox(video) {
         applyVolume();
     });
 
+    const ampRow = document.createElement('div');
+    Object.assign(ampRow.style, {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        marginTop: '6px',
+        opacity: '0',
+        transition: 'opacity 0.8s ease'
+    });
+
+    ampRow.appendChild(lockBtn);
+    ampRow.appendChild(ampSlider);
+
     box.addEventListener('mouseenter', () => {
         box.style.width = '1000px';
         box.style.transform = 'scale(1)';
         slider.style.opacity = '1';
-        ampSlider.style.opacity = '1';
+        ampRow.style.opacity = '1';
     });
 
     box.addEventListener('mouseleave', () => {
+        if (locked) return;
         box.style.width = '40px';
         box.style.transform = 'scale(0.95)';
         slider.style.opacity = '0';
-        ampSlider.style.opacity = '0';
+        ampRow.style.opacity = '0';
     });
 
     box.appendChild(slider);
-    box.appendChild(ampSlider);
+    box.appendChild(ampRow);
     document.body.appendChild(box);
 
-    setupAudioAmplifier(video); // hook the video into Web Audio API
-    applyVolume(); // initial set
+    setupAudioAmplifier(video);
+    applyVolume();
 }
 
 /* ============================
