@@ -32,7 +32,7 @@ jobs:
             TITLE="📦 $TITLE"
           fi
 
-          MSG="**QOL Codes**"$'\n'
+          MSG="**💜 QOL Codes 🎵**"$'\n'
           MSG+="$TITLE"$'\n'
           MSG+="Author: $AUTHOR"$'\n'
 
