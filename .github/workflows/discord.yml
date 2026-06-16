@@ -31,7 +31,8 @@ jobs:
           else
             TITLE="📦 $TITLE"
           fi
-          
+
+          MSG="**QOL Codes**"$'\n\n'
           MSG="$TITLE"$'\n'
           MSG+="Author: $AUTHOR"$'\n'
 
