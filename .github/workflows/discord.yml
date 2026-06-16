@@ -33,7 +33,7 @@ jobs:
           fi
 
           MSG="**QOL Codes**"$'\n\n'
-          MSG="$TITLE"$'\n'
+          MSG+="$TITLE"$'\n'
           MSG+="Author: $AUTHOR"$'\n'
 
           if [ -n "$BODY" ]; then
