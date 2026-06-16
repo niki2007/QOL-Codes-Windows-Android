@@ -246,7 +246,6 @@ textarea {
 .edit-box {
     position: fixed;
     top: 8px;
-    /* DESCRIPTION BOX Positioned between left and center */
     left: 20%;
     z-index: 9999;
     width: 120px;
